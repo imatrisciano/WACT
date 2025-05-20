@@ -92,19 +92,19 @@ class ChangeDetector:
             diff -= 360
         return diff
 
-    def _property_changed(self, oldValue, newValue, current_path=None):
-        if newValue == oldValue:
+    def _property_changed(self, old_value, new_value, current_path=None):
+        if new_value == old_value:
             return False
 
         # this property was changed
-        if self._is_float(oldValue) and self._is_float(newValue):
+        if self._is_float(old_value) and self._is_float(new_value):
             # this property is a number, handle changes considering float tolerances
             if current_path is not None and "rotation" in current_path:
                 # we are dealing with a rotation angle, in degrees, we should handle periodicity
-                difference = self._rotation_difference(oldValue, newValue)
+                difference = self._rotation_difference(old_value, new_value)
                 return difference > self.rotation_tolerance
             else:
-                return abs(float(oldValue) - float(newValue)) > self.float_tolerance
+                return abs(float(old_value) - float(new_value)) > self.float_tolerance
         else:
             return True
 
