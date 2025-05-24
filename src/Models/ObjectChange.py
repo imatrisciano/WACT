@@ -9,3 +9,6 @@ class ObjectChange:
 
     def has_changes(self) -> bool:
         return self.object_disappeared or any(self.object_changes)
+
+    def number_of_changes(self) -> int:
+        return len(self.object_changes)

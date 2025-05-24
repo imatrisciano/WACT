@@ -25,3 +25,6 @@ class ActionEffect:
                 output += "\t\tObject disappeared\n"
 
         return output
+
+    def number_of_changes(self) -> int:
+        return sum([x.number_of_changes() for x in self.object_changes])
