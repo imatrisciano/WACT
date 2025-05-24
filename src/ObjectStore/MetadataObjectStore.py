@@ -24,3 +24,6 @@ class MetadataObjectStore:
             obj = json.load(file)
 
         return obj
+
+    def list_files(self) -> list[os.PathLike | str]:
+        return os.listdir(self.base_path)
