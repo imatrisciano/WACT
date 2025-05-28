@@ -13,7 +13,7 @@ class ChangeDetector:
             "distance"
         ]
 
-    def find_changes_in_file(self, object: dict):
+    def find_changes_in_file(self, object: dict) -> ActionEffect:
         return self.find_changes(object["action_name"],
                                  object["action_objective_id"],
                                  object["before_world_status"],
