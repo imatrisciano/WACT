@@ -13,12 +13,12 @@ class ChangeDetector:
             "distance"
         ]
 
-    def find_changes_in_file(self, object: dict) -> ActionEffect:
-        return self.find_changes(object["action_name"],
-                                 object["action_objective_id"],
-                                 object["before_world_status"],
-                                 object["after_world_status"],
-                                 object["liquid"])
+    def find_changes_in_file(self, action_data: dict) -> ActionEffect:
+        return self.find_changes(action_data["action_name"],
+                                 action_data["action_objective_id"],
+                                 action_data["before_world_status"],
+                                 action_data["after_world_status"],
+                                 action_data["liquid"])
 
     def find_changes(self,
                      action_name: str,
@@ -30,8 +30,8 @@ class ChangeDetector:
 
         for old_object in before["objects"]:
             new_object: dict | None = self.get_object_by_id(after["objects"], old_object["objectId"])
-            object_change = self.find_changes_in_object(old_object, new_object)
-            changes.append(object_change)
+            object_changes = self.find_changes_in_object(old_object, new_object)
+            changes.append(object_changes)
 
         return ActionEffect(action_name, action_objective, before, changes, liquid)
 
@@ -50,8 +50,8 @@ class ChangeDetector:
         changes = self._get_changed_properties(before_object, after_object)
         property_changes: list[PropertyChange] = []
 
-        for changedPath in changes:
-            for path in changedPath:
+        for change_paths in changes:
+            for path in change_paths:
                 if not isinstance(path, list):
                     path = [path]  # make it into a list
 
@@ -92,7 +92,7 @@ class ChangeDetector:
             diff -= 360
         return diff
 
-    def _property_changed(self, old_value, new_value, current_path=None):
+    def _did_property_change(self, old_value, new_value, current_path=None) -> bool:
         if new_value == old_value:
             return False
 
@@ -127,7 +127,7 @@ class ChangeDetector:
                 if len(sub_property_changes) > 0:
                     changes.append(sub_property_changes)
             else:
-                if self._property_changed(old_value, new_value, current_path):
+                if self._did_property_change(old_value, new_value, current_path):
                     changes.append(current_path)
 
         return changes
