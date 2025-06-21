@@ -16,6 +16,7 @@ class DatasetAnalyzer:
         self._dataset_analyzed: bool = False
 
         self.action_counts = defaultdict(int)
+        self.changed_property_count = defaultdict(int)
         self.action_property_changes = []
         self.action_object_changes = []
         self.salient_materials = []
@@ -42,6 +43,10 @@ class DatasetAnalyzer:
             action_effect: ActionEffect = self.change_detector.find_changes_in_file(obj)
             self.action_property_changes.append(action_effect.number_of_property_changes())
             self.action_object_changes.append(action_effect.number_of_changed_objects())
+
+            for changed_object in action_effect.object_changes:
+                for changed_property in changed_object.object_changes:
+                    self.changed_property_count[changed_property.property_path_str()] += 1
 
             for scene_object in obj["before_world_status"]["objects"]:
                 object_type = scene_object["objectType"]
@@ -132,6 +137,19 @@ class DatasetAnalyzer:
         plt.tight_layout()
         plt.show()
 
+    def _plot_changed_property_count(self):
+        property_names = list(self.changed_property_count.keys())
+        property_counts = list(self.changed_property_count.values())
+
+        plt.figure(figsize=(12, 6))
+        plt.bar(property_names, property_counts, color='skyblue', edgecolor='#333')
+        plt.xlabel('Property Path')
+        plt.ylabel('Number of Instances')
+        plt.title('Distribution of Property Changes')
+        plt.xticks(rotation=90, ha='right')  # Rotate x-axis labels for better readability
+        plt.tight_layout()  # Adjust layout to prevent labels from overlapping
+        plt.show()
+
     def plot_dataset_info(self):
         """
         Uses the object_store to read the dataset and gathers some statistics on that
@@ -158,6 +176,7 @@ class DatasetAnalyzer:
 
         self._plot_number_of_changes_statistics()
 
+        self._plot_changed_property_count()
 
 
 
