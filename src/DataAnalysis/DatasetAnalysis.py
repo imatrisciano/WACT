@@ -88,7 +88,7 @@ class DatasetAnalyzer:
         plt.show()
 
     def _plot_number_of_changes_statistics(self):
-        print("Number of changes properties per each action:")
+        print("Number of changed properties per each action:")
         print(f" - min: {min(self.action_property_changes)}")
         print(f" - max: {max(self.action_property_changes)}")
         print(f" - avg: {mean(self.action_property_changes)}")
@@ -106,7 +106,14 @@ class DatasetAnalyzer:
         plt.show()
 
 
-        print("Number of changes properties per each action, normalized per number of changed objects:")
+        print("Number of changed objects per each action:")
+        print(f" - min: {min(self.action_object_changes)}")
+        print(f" - max: {max(self.action_object_changes)}")
+        print(f" - avg: {mean(self.action_object_changes)}")
+        print(f" - median: {median(self.action_object_changes)}")
+        print("\n\n")
+
+        print("Number of changed properties per each action, normalized per number of changed objects:")
         normalized_property_changes = [self.action_property_changes[i] / self.action_object_changes[i] for i in range(0, len(self.action_property_changes))]
 
         print(f" - min: {min(normalized_property_changes)}")
