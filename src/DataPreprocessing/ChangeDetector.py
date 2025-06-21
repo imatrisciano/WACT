@@ -10,7 +10,6 @@ class ChangeDetector:
         self.properties_to_be_ignored: list[str] = [
             "axisAlignedBoundingBox",
             "objectOrientedBoundingBox",
-            "distance"
         ]
 
     def find_changes_in_file(self, action_data: dict) -> ActionEffect:
