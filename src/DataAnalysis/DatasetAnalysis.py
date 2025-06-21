@@ -18,6 +18,9 @@ class DatasetAnalyzer:
         self.action_counts = defaultdict(int)
         self.action_property_changes = []
         self.action_object_changes = []
+        self.salient_materials = []
+        self.object_types = []
+        self.fill_liquids = []
 
     def _analyze_dataset(self):
         # Analysis is only required once
@@ -39,6 +42,23 @@ class DatasetAnalyzer:
             action_effect: ActionEffect = self.change_detector.find_changes_in_file(obj)
             self.action_property_changes.append(action_effect.number_of_property_changes())
             self.action_object_changes.append(action_effect.number_of_changed_objects())
+
+            for scene_object in obj["before_world_status"]["objects"]:
+                object_type = scene_object["objectType"]
+                if object_type not in self.object_types:
+                    self.object_types.append(object_type)
+
+                fill_liquid = scene_object["fillLiquid"]
+                if fill_liquid not in self.fill_liquids:
+                    self.fill_liquids.append(fill_liquid)
+
+                object_materials = scene_object["salientMaterials"]
+                if object_materials is None:
+                    continue
+
+                for material in object_materials:
+                    if material not in self.salient_materials:
+                        self.salient_materials.append(material)
 
 
     def _get_action_names_and_counts(self) -> (list[str], list[int]):
@@ -111,6 +131,21 @@ class DatasetAnalyzer:
         """
 
         self._analyze_dataset()
+
+        print("Salient materials: ")
+        for i, material in enumerate(self.salient_materials):
+            print(f"{i+1}: \"{material}\",")
+        print()
+
+        print("Object types: ")
+        for i, obj_type in enumerate(self.object_types):
+            print(f"{i + 1}: \"{obj_type}\",")
+        print()
+
+        print("Fill liquids: ")
+        for i, fill_liquid in enumerate(self.fill_liquids):
+            print(f"{i + 1}: \"{fill_liquid}\",")
+        print()
 
         self._plot_action_names_statistics()
 
