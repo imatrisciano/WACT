@@ -9,7 +9,7 @@ from DataPreprocessing.ObjectEncoder import ObjectEncoder
 object_store = MetadataObjectStore("../../ai2thor-hugo/objects/")
 change_detector = ChangeDetector()
 
-object_encoder = ObjectEncoder(object_embedding_size=128)
+object_encoder = ObjectEncoder()
 world_status_encoder = MostChangesWorldStatusEncoder(object_encoder, number_of_significant_objects=3)
 
 #dataset_analyzer = DatasetAnalyzer(object_store, change_detector)
@@ -18,8 +18,7 @@ world_status_encoder = MostChangesWorldStatusEncoder(object_encoder, number_of_s
 
 for file_path in tqdm(object_store.list_files()):
     obj = object_store.load(file_path)
-    #action_changes = change_detector.find_changes_in_file(obj)
-    encoding = world_status_encoder.encode(obj)
+    world_encoding = world_status_encoder.encode_action_data(obj)
 
-    print(encoding)
+    print(world_encoding)
 
