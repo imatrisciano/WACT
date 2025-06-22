@@ -1,7 +1,3 @@
-import itertools
-from collections import defaultdict
-
-import numpy as np
 from src.DataPreprocessing.ObjectEncoder import ObjectEncoder
 from src.DataPreprocessing.ChangeDetector import ChangeDetector
 
@@ -10,14 +6,14 @@ class WorldStatusEncoder:
     def __init__(self, object_encoder: ObjectEncoder):
         self.object_encoder = object_encoder
 
-    def encode(self, objects: list[dict]) -> np.array:
+    def encode(self, objects: list[dict]) -> list[float]:
         object_encodings = []
 
         for obj in objects:
             obj_encoding = self.object_encoder.encode(obj)
             object_encodings.append(obj_encoding)
 
-        return np.array(object_encodings)
+        return object_encodings
 
     def encode_matching_order(self, original_objects: list[dict], objects_to_encode: list[dict]):
         """Encodes `objects_to_encode` and makes sure there is a positional matching between `objects_to_encode`
@@ -31,11 +27,22 @@ class WorldStatusEncoder:
 
         return self.encode(ordered_objects_to_encode)
 
-    def decode(self, objects: np.array) -> list[dict]:
-        splitted_object_embeddings = np.array_split(objects, self.object_encoder.object_encoding_size)
+    def encode_before_and_after_world_status(self, before_objects: list[dict], after_objects: list[dict]) -> list[float]:
+        before_objects_encodings = self.encode(before_objects)
+        after_objects_encodings = self.encode_matching_order(before_objects, after_objects)
+
+        # concatenate lists and return them
+        return before_objects_encodings + after_objects_encodings
+
+    def encode_action_data(self, action_data: dict) -> list[float]:
+        return self.encode_before_and_after_world_status(action_data["before_world_status"], action_data["after_world_status"])
+
+    def decode(self, objects: list) -> list[dict]:
         decoded_objects = []
-        for embedding in splitted_object_embeddings:
-            decoded_object = self.object_encoder.decode(embedding)
+
+        for i in range(0, len(objects), self.object_encoder.object_encoding_size):
+            current_object_encoding = objects[i:i + self.object_encoder.object_encoding_size]
+            decoded_object = self.object_encoder.decode(current_object_encoding)
             decoded_objects.append(decoded_object)
 
         return decoded_objects
@@ -47,13 +54,13 @@ class MostChangesWorldStatusEncoder(WorldStatusEncoder):
         self.number_of_significant_objects = number_of_significant_objects
         self.change_detector = ChangeDetector()
 
-    def _get_most_changed_objects(self, objects: dict) -> list[dict]:
+    def _get_most_changed_objects(self, action_data: dict) -> list[dict]:
         """
         Returns the objects with the most number of changes.
         The number of items that will be returned is self.number_of_significant_objects.
         If there are not enough items, None will be used for padding.
         """
-        action_effect = self.change_detector.find_changes_in_file(objects)
+        action_effect = self.change_detector.find_changes_in_file(action_data)
         objects_and_their_number_of_changes = {obj: obj.number_of_changes() for obj in action_effect.object_changes}
         del action_effect
 
@@ -61,15 +68,17 @@ class MostChangesWorldStatusEncoder(WorldStatusEncoder):
         sorted_objects = sorted(objects_and_their_number_of_changes.items(), key=lambda x: x[1], reverse=True)
         del objects_and_their_number_of_changes
 
+        get_object_by_its_object_change = lambda object_change: (
+            ChangeDetector.get_object_by_id(action_data["before_world_status"]["objects"], object_change.object_id))
+
+
         # Build and return the output list
-        return [sorted_objects[i]
+        return [get_object_by_its_object_change(sorted_objects[i][0])
                 if i < len(sorted_objects)
                 else None  # pad with None
                 for i in range(0, self.number_of_significant_objects)]
 
-    def encode(self, objects: dict) -> np.array:
-        objects = self._get_most_changed_objects(objects)
-        return super().encode(objects)
-
-    def decode(self, objects: np.array) -> list[dict]:
-        return super().decode(objects)
+    def encode_action_data(self, action_data: dict) -> list[float]:
+        sorted_before_objects = self._get_most_changed_objects(action_data)
+        after_objects = action_data["after_world_status"]["objects"]
+        return super().encode_before_and_after_world_status(sorted_before_objects, after_objects)
