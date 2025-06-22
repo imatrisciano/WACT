@@ -19,6 +19,18 @@ class WorldStatusEncoder:
 
         return np.array(object_encodings)
 
+    def encode_matching_order(self, original_objects: list[dict], objects_to_encode: list[dict]):
+        """Encodes `objects_to_encode` and makes sure there is a positional matching between `objects_to_encode`
+        and `original_objects`, using empty_encodings where no match is found"""
+        ordered_objects_to_encode: list[dict | None] = []
+
+        for obj in original_objects:
+            obj_id = obj["objectId"]
+            corresponding_object: dict | None = ChangeDetector.get_object_by_id(objects_to_encode, obj_id)
+            ordered_objects_to_encode.append(corresponding_object)
+
+        return self.encode(ordered_objects_to_encode)
+
     def decode(self, objects: np.array) -> list[dict]:
         splitted_object_embeddings = np.array_split(objects, self.object_encoder.object_encoding_size)
         decoded_objects = []
