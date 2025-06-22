@@ -2,6 +2,7 @@ import sys
 
 class ObjectEncoder:
     def __init__(self):
+        self.object_encoding_size = 37
 
         self.INDEX_TO_TEMPERATURE_MAP = {
             0: "Unknown",
@@ -275,6 +276,10 @@ class ObjectEncoder:
         current[leaf_key] = value
 
     def encode(self, obj: dict) -> list:
+        # if obj is None, return all zeroes
+        if obj is None:
+            return [0] * self.object_encoding_size
+
         # Encode bools, ints and floats:
         features = [self._get_value(obj, key) for key in self._FEATURE_ORDER]
 
