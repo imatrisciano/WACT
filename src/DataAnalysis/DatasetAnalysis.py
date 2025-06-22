@@ -22,6 +22,7 @@ class DatasetAnalyzer:
         self.salient_materials = []
         self.object_types = []
         self.fill_liquids = []
+        self.actions_names = []
 
     def _analyze_dataset(self):
         # Analysis is only required once
@@ -43,6 +44,9 @@ class DatasetAnalyzer:
             action_effect: ActionEffect = self.change_detector.find_changes_in_file(obj)
             self.action_property_changes.append(action_effect.number_of_property_changes())
             self.action_object_changes.append(action_effect.number_of_changed_objects())
+
+            if not action_effect.action_name in self.actions_names:
+                self.actions_names.append(action_effect.action_name)
 
             for changed_object in action_effect.object_changes:
                 for changed_property in changed_object.object_changes:
@@ -170,6 +174,11 @@ class DatasetAnalyzer:
         print("Fill liquids: ")
         for i, fill_liquid in enumerate(self.fill_liquids):
             print(f"{i + 1}: \"{fill_liquid}\",")
+        print()
+
+        print("Actions: ")
+        for i, action in enumerate(self.actions_names):
+            print(f"{i + 1}: \"{action}\",")
         print()
 
         self._plot_action_names_statistics()
