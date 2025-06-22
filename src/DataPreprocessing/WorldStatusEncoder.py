@@ -20,7 +20,7 @@ class WorldStatusEncoder:
         return np.array(object_encodings)
 
     def decode(self, objects: np.array) -> list[dict]:
-        splitted_object_embeddings = np.array_split(objects, self.object_encoder.object_embedding_size)
+        splitted_object_embeddings = np.array_split(objects, self.object_encoder.object_encoding_size)
         decoded_objects = []
         for embedding in splitted_object_embeddings:
             decoded_object = self.object_encoder.decode(embedding)
