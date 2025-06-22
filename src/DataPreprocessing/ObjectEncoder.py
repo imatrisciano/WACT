@@ -3,6 +3,7 @@ import sys
 class ObjectEncoder:
     def __init__(self):
         self.object_encoding_size = 37
+        self.empty_encoding = [0] * self.object_encoding_size # list of zeroes
 
         self.INDEX_TO_TEMPERATURE_MAP = {
             0: "Unknown",
@@ -278,7 +279,7 @@ class ObjectEncoder:
     def encode(self, obj: dict) -> list:
         # if obj is None, return all zeroes
         if obj is None:
-            return [0] * self.object_encoding_size
+            return self.empty_encoding
 
         # Encode bools, ints and floats:
         features = [self._get_value(obj, key) for key in self._FEATURE_ORDER]
