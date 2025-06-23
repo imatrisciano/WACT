@@ -1,6 +1,9 @@
+from typing import Sized
+
+import numpy as np
 import torch
 from joblib import Parallel, delayed
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 
 from src.DataPreprocessing.ChangeDetector import ChangeDetector
 from src.DataPreprocessing.ObjectEncoder import ObjectEncoder
@@ -8,7 +11,7 @@ from src.DataPreprocessing.WorldStatusEncoder import MostChangesWorldStatusEncod
 from src.ObjectStore.MetadataObjectStore import MetadataObjectStore
 
 
-class MyDataset(Dataset):
+class MyDataset(Dataset, Sized):
     """
     A simple synthetic dataset for demonstration purposes.
     Generates random float vectors and corresponding labels.
@@ -47,7 +50,7 @@ class MyDataset(Dataset):
             obj = self.object_store.load(item_path)
 
             data = self.world_status_encoder.encode_action_data(obj)
-            label = self.label_to_id_map.get(obj["action_name"], 0)
+            label = self.label2id(obj["action_name"])
 
             return data, label
 
@@ -67,8 +70,70 @@ class MyDataset(Dataset):
 
         print("Dataset ready")
 
+    def label2id(self, label: str) -> int:
+        return self.label_to_id_map.get(label, 0)
+
+    def id2label(self, index: int) -> str:
+        return self.id_to_labels_map.get(index, "Unknown")
+
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
         return self.data[idx], self.labels[idx]
+
+    def split_dataset(
+            self,
+            train_split_ratio: float,
+            val_split_ratio: float,
+            batch_size: int,
+            shuffle_dataset: bool = True) -> (DataLoader, DataLoader, DataLoader):
+        """
+           Splits a dataset into training, validation, and test sets.
+
+           Args:
+               train_split_ratio (float): The proportion of the dataset to allocate to the training set.
+                                          Must be between 0 and 1.
+               val_split_ratio (float): The proportion of the dataset to allocate to the validation set.
+                                        Must be between 0 and 1.
+                                        The test set will take the remaining proportion.
+               batch_size (int): The batch size, so DataLoaders can properly be defined
+               shuffle_dataset (bool): Whether to shuffle the dataset indices before splitting.
+
+           Returns:
+               tuple: A tuple containing (train_loader, validation_loader, test_loader).
+           """
+
+        whole_dataset = self
+
+        if not (0 < train_split_ratio < 1 and 0 <= val_split_ratio < 1):
+            raise ValueError("train_split_ratio and val_split_ratio must be between 0 and 1.")
+        if train_split_ratio + val_split_ratio >= 1:
+            raise ValueError("The sum of train_split_ratio and val_split_ratio must be less than 1 "
+                             "to leave room for a test set.")
+
+        dataset_size = len(whole_dataset)
+        indices = list(range(dataset_size))
+
+        if shuffle_dataset:
+            np.random.shuffle(indices)
+
+        # Calculate split points
+        train_split_point = int(np.floor(train_split_ratio * dataset_size))
+        val_split_point = int(np.floor((train_split_ratio + val_split_ratio) * dataset_size))
+
+        # Split indices
+        train_indices = indices[:train_split_point]
+        val_indices = indices[train_split_point:val_split_point]
+        test_indices = indices[val_split_point:]
+
+        # Create samplers
+        train_sampler = SubsetRandomSampler(train_indices)
+        valid_sampler = SubsetRandomSampler(val_indices)
+        test_sampler = SubsetRandomSampler(test_indices)
+
+        train_loader = DataLoader(whole_dataset, batch_size=batch_size, sampler=train_sampler)
+        validation_loader = DataLoader(whole_dataset, batch_size=batch_size, sampler=valid_sampler)
+        test_loader = DataLoader(whole_dataset, batch_size=batch_size, sampler=test_sampler)
+
+        return train_loader, validation_loader, test_loader
