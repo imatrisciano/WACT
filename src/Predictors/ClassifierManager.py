@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
 from torch import nn, optim
 from torch.utils.data import DataLoader
 
@@ -10,7 +12,7 @@ from src.Predictors.TransformerClassifier import TransformerClassifier
 class ClassifierManager:
     def __init__(self, object_store, device = None):
         self.object_store = object_store
-        self.whole_dataset = None
+        self.whole_dataset: MyDataset = None
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
@@ -62,7 +64,7 @@ class ClassifierManager:
 
         for epoch in range(self.NUM_EPOCHS):
             self._train_epoch(epoch, train_loader)
-            val_loss, val_accuracy = self._validate_model(val_loader)
+            val_loss, val_accuracy = self._compute_validation_loss_and_accuracy(val_loader)
 
             self.val_losses.append(val_loss)
             self.val_accuracies.append(val_accuracy)
@@ -105,7 +107,7 @@ class ClassifierManager:
         print(f"Epoch [{epoch + 1}/{self.NUM_EPOCHS}] completed.")
         print(f"  Training Loss: {avg_train_loss:.4f}, Training Accuracy: {train_accuracy:.2f}%")
 
-    def _validate_model(self, data_loader) -> (float, float):
+    def _compute_validation_loss_and_accuracy(self, data_loader) -> (float, float):
         """
         Computes the model's loss and accuracy on the given data_loader
         :param data_loader: Provider of the validation data
@@ -128,6 +130,56 @@ class ClassifierManager:
                 _, predicted = torch.max(outputs.data, 1)
                 val_total_samples += labels.size(0)
                 val_correct_predictions += (predicted == labels).sum().item()
+
+        avg_loss = val_total_loss / len(data_loader)
+        accuracy = 100 * val_correct_predictions / val_total_samples
+
+        return avg_loss, accuracy
+
+    def _validate_model(self, data_loader) -> (float, float):
+        """
+        Computes the model's loss and accuracy on the given data_loader and builds and shows the confusion matrix
+        :param data_loader: Provider of the validation data
+        :return: model's average loss on the data, model's accuracy on the data
+        """
+
+        # Validation phase
+        self.model.eval()  # Set model to evaluation mode
+        val_total_loss = 0
+        val_correct_predictions = 0
+        val_total_samples = 0
+
+        all_labels = []  # To store all true labels
+        all_predictions = []  # To store all predicted labels
+
+        with torch.no_grad():  # Disable gradient calculation for validation
+            for data, labels in data_loader:
+                data, labels = data.to(self.device), labels.to(self.device)
+                outputs = self.model(data)
+                loss = self.criterion(outputs, labels)
+                val_total_loss += loss.item()
+
+                _, predicted = torch.max(outputs.data, 1)
+                val_total_samples += labels.size(0)
+                val_correct_predictions += (predicted == labels).sum().item()
+
+                # Collect labels and predictions for confusion matrix
+                all_labels.extend(labels.cpu().numpy())
+                all_predictions.extend(predicted.cpu().numpy())
+
+        # Build and plot confusion matrix
+        cm = confusion_matrix(all_labels, all_predictions)
+
+        class_names = self.whole_dataset.get_labels()
+        class_names.remove("Unknown") # removes the first, unused entry
+
+        plt.figure(figsize=(11, 10))
+        plt.subplots_adjust(left=0.17, bottom=0.17, right=1, top=0.95) # better centering of the image, empirical values
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+        plt.xlabel('Predicted Label', fontsize=12)
+        plt.ylabel('True Label', fontsize=12)
+        plt.title('Confusion Matrix')
+        plt.show()
 
         avg_loss = val_total_loss / len(data_loader)
         accuracy = 100 * val_correct_predictions / val_total_samples
