@@ -1,3 +1,4 @@
+import os.path
 from typing import Sized
 
 import numpy as np
@@ -16,7 +17,13 @@ class MyDataset(Dataset, Sized):
     A simple synthetic dataset for demonstration purposes.
     Generates random float vectors and corresponding labels.
     """
-    def __init__(self, object_store: MetadataObjectStore, number_of_significant_objects: int = 10):
+    def __init__(self, object_store: MetadataObjectStore, use_cache:bool = True, cache_location: str = "../data/dataset_cache/", number_of_significant_objects: int = 10):
+        self.labels = None
+        self.data = None
+        self.loaded = False
+        self.use_cache: bool = use_cache
+        self.cache_location: str = cache_location
+
         self.object_store = object_store
         self.change_detector = ChangeDetector()
 
@@ -41,6 +48,7 @@ class MyDataset(Dataset, Sized):
         }
         self.label_to_id_map = {v: k for k, v in self.id_to_labels_map.items()}
 
+    def _process_raw_dataset(self):
         def _preprocess_item(item_path) -> tuple:
             """
             Reads an action file from disk and gathers its data and label
@@ -70,16 +78,59 @@ class MyDataset(Dataset, Sized):
 
         print("Dataset ready")
 
+        if self.use_cache:
+            self._save_dataset_cache()
+
+    def _load_cached_dataset(self):
+        print(f"Loading cached dataset from location: {self.cache_location}")
+        data_path, labels_path = self._get_data_and_label_cache_path()
+        self.data = torch.tensor(torch.load(data_path))
+        self.labels = torch.tensor(torch.load(labels_path), dtype=torch.long)
+
+    def _save_dataset_cache(self):
+        print(f"Saving dataset cache in location: {self.cache_location}")
+        os.makedirs(self.cache_location)
+
+        data_path, labels_path = self._get_data_and_label_cache_path()
+        torch.save(self.data, data_path)
+        torch.save(self.labels, labels_path)
+
+    def _get_data_and_label_cache_path(self) -> (str, str):
+        data_path = os.path.join(self.cache_location, "data.bin")
+        labels_path = os.path.join(self.cache_location, "labels.bin")
+
+        return data_path, labels_path
+
+    def _cache_exists(self) -> bool:
+        data_path, labels_path = self._get_data_and_label_cache_path()
+        return os.path.exists(data_path) and os.path.exists(labels_path)
+
+    def load(self):
+        if self.use_cache and self._cache_exists():
+            self._load_cached_dataset()
+        else:
+            self._process_raw_dataset()
+
+        self.loaded = True
+
     def label2id(self, label: str) -> int:
         return self.label_to_id_map.get(label, 0)
 
     def id2label(self, index: int) -> str:
         return self.id_to_labels_map.get(index, "Unknown")
 
+    def get_labels(self) -> list[str]:
+        return list(self.id_to_labels_map.values())
+
     def __len__(self):
+        if not self.loaded:
+            raise Exception("Dataset must be loaded. Please invoke `load()` before continuing")
         return len(self.data)
 
     def __getitem__(self, idx):
+        if not self.loaded:
+            raise Exception("Dataset must be loaded. Please invoke `load()` before continuing")
+
         return self.data[idx], self.labels[idx]
 
     def split_dataset(
@@ -103,7 +154,8 @@ class MyDataset(Dataset, Sized):
            Returns:
                tuple: A tuple containing (train_loader, validation_loader, test_loader).
            """
-
+        if not self.loaded:
+            raise Exception("Dataset must be loaded. Please invoke `load()` before continuing")
         whole_dataset = self
 
         if not (0 < train_split_ratio < 1 and 0 <= val_split_ratio < 1):

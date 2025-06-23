@@ -163,7 +163,11 @@ class ClassifierManager:
 
         # Initialize Dataset and DataLoader
         print("Creating datasets...")
-        self.whole_dataset = MyDataset(self.object_store, self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS)
+        self.whole_dataset = MyDataset(self.object_store,
+                                       use_cache=True,
+                                       cache_location="../data/dataset_cache/",
+                                       number_of_significant_objects=self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS)
+        self.whole_dataset.load()
 
         np.random.seed(42)
 
