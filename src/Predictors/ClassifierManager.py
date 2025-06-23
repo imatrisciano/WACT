@@ -1,11 +1,9 @@
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from torch import nn, optim
-from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
-from tqdm import tqdm
-import matplotlib
+from torch.utils.data import DataLoader
 
-from src.ObjectStore.MetadataObjectStore import MetadataObjectStore
 from src.Predictors.MyDataset import MyDataset
 from src.Predictors.TransformerClassifier import TransformerClassifier
 
@@ -136,6 +134,29 @@ class ClassifierManager:
 
         return avg_loss, accuracy
 
+    def plot_training_graphs(self):
+        font_size = 12
+
+        # Plot the Graph Loss Curves
+        plt.figure(figsize=[8, 6])
+        plt.plot(self.train_losses, 'r', linewidth=2.0)
+        plt.plot(self.val_losses, 'b', linewidth=2.0)
+        plt.legend(['Training loss', 'Validation Loss'], fontsize=font_size)
+        plt.xlabel('Epochs ', fontsize=font_size)
+        plt.ylabel('Loss', fontsize=font_size)
+        plt.title('Loss Curves', fontsize=font_size)
+
+        # Accuracy Curves
+        plt.figure(figsize=[8, 6])
+        plt.plot(self.train_accuracies, 'r', linewidth=2.0)
+        plt.plot(self.val_accuracies, 'b', linewidth=2.0)
+        plt.legend(['Training Accuracy', 'Validation Accuracy'], fontsize=font_size)
+        plt.xlabel('Epochs ', fontsize=font_size)
+        plt.ylabel('Accuracy', fontsize=font_size)
+        plt.title('Accuracy Curves', fontsize=font_size)
+
+        plt.show()
+
     def train(self):
         # Device configuration
         print(f"Using device: {self.device}")
@@ -178,6 +199,8 @@ class ClassifierManager:
         print("Evaluating test accuracy...")
         test_loss, test_accuracy = self._validate_model(test_loader)
         print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.3f}%\n")
+
+        self.plot_training_graphs()
 
         print("Saving model...")
         model_save_path = "predictor.pth"
