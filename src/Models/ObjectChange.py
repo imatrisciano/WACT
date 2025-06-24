@@ -12,3 +12,9 @@ class ObjectChange:
 
     def number_of_changes(self) -> int:
         return len(self.object_changes)
+
+    def __str__(self):
+        if self.object_disappeared:
+            return f"['{self.object_id}']: disappeared"
+        else:
+            return f"['{self.object_id}']: {len(self.object_changes)} changes"
