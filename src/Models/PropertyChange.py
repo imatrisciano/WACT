@@ -11,3 +11,6 @@ class PropertyChange:
 
     def property_path_str(self) -> str:
         return str.join('.', self.property_path)
+
+    def __str__(self):
+        return f"{self.property_path_str()}: '{self.before_value}' -> '{self.after_value}'"
