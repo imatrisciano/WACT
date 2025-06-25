@@ -15,7 +15,7 @@ from src.Predictors.TransformerClassifier import TransformerClassifier
 class ClassifierManager:
     def __init__(self, object_store, model_save_path: str = "predictor.pth", device = None):
         self.object_store = object_store
-        self.whole_dataset: MyDataset = None
+
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
@@ -314,10 +314,6 @@ class ClassifierManager:
 
         # Initialize Dataset and DataLoader
         print("Creating datasets...")
-        self.whole_dataset = MyDataset(self.object_store,
-                                       use_cache=True,
-                                       cache_location="../data/dataset_cache/",
-                                       number_of_significant_objects=self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS)
         self.whole_dataset.load()
 
         np.random.seed(42)
