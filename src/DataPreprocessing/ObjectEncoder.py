@@ -262,7 +262,7 @@ class ObjectEncoder:
         Navigates the `obj` dictionary using the `property_path` information to set that value equal to `value`
         """
 
-        # Splits the property_path into it's nodes, then navigates into the object
+        # Splits the property_path into its nodes, then navigates into the object
         parts = property_path.split('.')
         current = obj
         for p in parts[:-1]:
