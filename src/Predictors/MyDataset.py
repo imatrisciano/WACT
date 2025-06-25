@@ -17,12 +17,14 @@ class MyDataset(Dataset, Sized):
     A simple synthetic dataset for demonstration purposes.
     Generates random float vectors and corresponding labels.
     """
-    def __init__(self, object_store: MetadataObjectStore, use_cache:bool = True, cache_location: str = "../data/dataset_cache/", number_of_significant_objects: int = 10):
-        self.labels = None
+    def __init__(self, object_store: MetadataObjectStore, use_cache:bool = True, cache_location: str = "../data/dataset_cache/", number_of_significant_objects: int = 10, use_parallel_processing: bool = True):
+        self.action_labels = None
+        self.object_labels = None
         self.data = None
         self.loaded = False
         self.use_cache: bool = use_cache
         self.cache_location: str = cache_location
+        self.use_parallel_processing: bool = use_parallel_processing
 
         self.object_store = object_store
         self.change_detector = ChangeDetector()
@@ -63,10 +65,17 @@ class MyDataset(Dataset, Sized):
             return data, label
 
         print("Preprocessing dataset...")
-        # Preprocess all input files in a parallel manner
-        results = (Parallel(n_jobs=-1)
-                   (delayed(_preprocess_item)(path)
-                    for path in self.dataset_files))
+
+        if self.use_parallel_processing:
+            # Preprocess all input files in a parallel manner
+            results = (Parallel(n_jobs=-1)
+                      (delayed(_preprocess_item)(path)
+                       for path in self.dataset_files))
+        else:
+            # Preprocess all input files single threaded
+            results = []
+            for path in self.dataset_files:
+                results.append(_preprocess_item(path))
 
         # Results is a list of tuples [(data_1, label_1), (data_2, label_2), ..., (data_n, label_n)],
         # We turn it into a list of data and a list of labels
