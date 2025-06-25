@@ -1,3 +1,4 @@
+import os.path
 from typing import Literal
 
 import numpy as np
@@ -12,7 +13,7 @@ from src.Predictors.MyDataset import MyDataset
 from src.Predictors.TransformerClassifier import TransformerClassifier
 
 class ClassifierManager:
-    def __init__(self, object_store, device = None):
+    def __init__(self, object_store, model_save_path: str = "predictor.pth", device = None):
         self.object_store = object_store
         self.whole_dataset: MyDataset = None
         if device is None:
@@ -52,6 +53,11 @@ class ClassifierManager:
         self.LEARNING_RATE = 0.0005
         self.BATCH_SIZE = 256
         self.NUM_EPOCHS = 25           # Number of training epochs
+        self.model_save_path = model_save_path
+        self.whole_dataset: MyDataset = MyDataset(self.object_store,
+                                                  use_cache=True,
+                                                  cache_location="../data/dataset_cache/",
+                                                  number_of_significant_objects=self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS)
 
     def _train_classifier(
             self,
@@ -358,9 +364,23 @@ class ClassifierManager:
         self.plot_training_graphs()
 
         print("Saving model...")
-        model_save_path = "predictor.pth"
-        torch.save(self.model, model_save_path)
-        print(f"Model saved of file {model_save_path}")
+
+        torch.save(self.model, self.model_save_path)
+        print(f"Model saved of file {self.model_save_path}")
+
+    def load_model(self):
+        if not os.path.exists(self.model_save_path):
+            raise Exception(f"Model file was not found in path {self.model_save_path}.\n"
+                            f"Please run the training process or download a pre-trained model")
+
+        print("Warning: loading model with weights_only set to False,\n"
+              "this can be a cybersecurity risk if you don't trust whoever gave you the model file")
+
+        answer = input("Continue anyway (y/N)? ")
+        if answer != "y" and answer != "Y":
+            raise Exception("Untrusted model loading was canceled by the user")
+
+        self.model = torch.load("predictor.pth", weights_only=False)
 
     def inference(self, vector) -> (int, str, int):
         """
@@ -368,6 +388,9 @@ class ClassifierManager:
         :param vector: input data (encoded before and after action world status)
         :return: the predicted action class number, the corresponding action name, the predicted object index
         """
+
+        if self.model is None:
+            self.load_model()
 
         self.model.eval()
         tensor_input = torch.tensor(vector).to(self.device)
