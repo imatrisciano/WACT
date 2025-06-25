@@ -13,13 +13,15 @@ from src.Predictors.MyDataset import MyDataset
 from src.Predictors.TransformerClassifier import TransformerClassifier
 
 class ClassifierManager:
-    def __init__(self, object_store, model_save_path: str = "predictor.pth", device = None):
+    def __init__(self, object_store, dataset: MyDataset, number_of_significant_objects = 10, model_save_path: str = "predictor.pth", device = None):
         self.object_store = object_store
 
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
             self.device = device
+
+        self.whole_dataset = dataset
 
         self.train_action_losses = []
         self.train_object_losses = []
@@ -36,7 +38,7 @@ class ClassifierManager:
         self.optimizer: optim.Optimizer = None # Optimizer instance (e.g., Adam).
 
         # Input size, classes count
-        self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS = 10 # How many objects to consider when analyzing an executed action
+        self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS = number_of_significant_objects # How many objects to consider when analyzing an executed action
         self.INPUT_DIM = 37            # Length of each object encoding vector
         self.NUM_VECTORS = 2 * self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS           # Number of vectors in the input sequence = 2*number_of_significant_objects since we store both before and after action objects
         self.NUM_ACTION_CLASSES = 13          # Number of possible output classes (for softmax)
@@ -52,12 +54,9 @@ class ClassifierManager:
         # Learning parameters
         self.LEARNING_RATE = 0.0005
         self.BATCH_SIZE = 256
-        self.NUM_EPOCHS = 25           # Number of training epochs
+        self.NUM_EPOCHS = 50           # Number of training epochs
+
         self.model_save_path = model_save_path
-        self.whole_dataset: MyDataset = MyDataset(self.object_store,
-                                                  use_cache=True,
-                                                  cache_location="../data/dataset_cache/",
-                                                  number_of_significant_objects=self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS)
 
     def _train_classifier(
             self,

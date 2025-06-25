@@ -54,6 +54,7 @@ class MostChangesWorldStatusEncoder(WorldStatusEncoder):
     def __init__(self, object_encoder: ObjectEncoder, number_of_significant_objects: int = 3):
         super().__init__(object_encoder)
         self.number_of_significant_objects = number_of_significant_objects
+        self.total_objects_in_world_encoding = 2*number_of_significant_objects  # one set of objects to describe the world before the actions and another one to describe the world after the action was performed
         self.change_detector = ChangeDetector()
 
     def _get_most_changed_objects(self, action_data: dict) -> list[dict]:
