@@ -1,3 +1,5 @@
+from sys import stderr
+
 from src.DataPreprocessing.ObjectEncoder import ObjectEncoder
 from src.DataPreprocessing.ChangeDetector import ChangeDetector
 
@@ -82,3 +84,22 @@ class MostChangesWorldStatusEncoder(WorldStatusEncoder):
         sorted_before_objects = self._get_most_changed_objects(action_data)
         after_objects = action_data["after_world_status"]["objects"]
         return super().encode_before_and_after_world_status(sorted_before_objects, after_objects)
+
+    def encode_action_data_and_return_action_object_index(self, action_data: dict) -> (list[float], int):
+        sorted_before_objects = self._get_most_changed_objects(action_data)
+        after_objects = action_data["after_world_status"]["objects"]
+
+        action_target = action_data["action_objective_id"]
+        changed_objects_with_the_same_id_of_action_target = \
+            [x for x in sorted_before_objects if x['objectId'] == action_target]
+
+        if len(changed_objects_with_the_same_id_of_action_target) > 0:
+            action_target = changed_objects_with_the_same_id_of_action_target[0]
+            action_target_index = sorted_before_objects.index(action_target)
+        else:
+            print("Error: action target object not found in sorted before objects", file=stderr)
+            action_target_index = 0
+
+        world_encoding = super().encode_before_and_after_world_status(sorted_before_objects, after_objects)
+
+        return world_encoding, action_target_index

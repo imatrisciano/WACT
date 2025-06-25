@@ -59,10 +59,10 @@ class MyDataset(Dataset, Sized):
             """
             obj = self.object_store.load(item_path)
 
-            data = self.world_status_encoder.encode_action_data(obj)
-            label = self.label2id(obj["action_name"])
+            data, object_label = self.world_status_encoder.encode_action_data_and_return_action_object_index(obj)
+            action_label = self.label2id(obj["action_name"])
 
-            return data, label
+            return data, action_label, object_label
 
         print("Preprocessing dataset...")
 
@@ -77,13 +77,15 @@ class MyDataset(Dataset, Sized):
             for path in self.dataset_files:
                 results.append(_preprocess_item(path))
 
-        # Results is a list of tuples [(data_1, label_1), (data_2, label_2), ..., (data_n, label_n)],
+        # Results is a list of tuples [(data_1, action_label_1, object_label_1),
+        #  (data_2, action_label_2, object_label_2), ..., (data_n, action_label_n, object_label_n)],
         # We turn it into a list of data and a list of labels
-        self.data, self.labels = zip(*results)
+        self.data, self.action_labels, self.object_labels = zip(*results)
 
         # Now let's make the data into pytorch's tensors, ready to be moved to the correct device
         self.data = torch.tensor(self.data)
-        self.labels = torch.tensor(self.labels, dtype=torch.long)
+        self.action_labels = torch.tensor(self.action_labels, dtype=torch.long)
+        self.object_labels = torch.tensor(self.object_labels, dtype=torch.long)
 
         print("Dataset ready")
 
@@ -92,27 +94,29 @@ class MyDataset(Dataset, Sized):
 
     def _load_cached_dataset(self):
         print(f"Loading cached dataset from location: {self.cache_location}")
-        data_path, labels_path = self._get_data_and_label_cache_path()
+        data_path, action_labels_path, object_labels_path = self._get_data_and_label_cache_path()
         self.data = torch.tensor(torch.load(data_path))
-        self.labels = torch.tensor(torch.load(labels_path), dtype=torch.long)
+        self.action_labels = torch.tensor(torch.load(action_labels_path), dtype=torch.long)
+        self.object_labels = torch.tensor(torch.load(object_labels_path), dtype=torch.long)
 
     def _save_dataset_cache(self):
         print(f"Saving dataset cache in location: {self.cache_location}")
         os.makedirs(self.cache_location)
 
-        data_path, labels_path = self._get_data_and_label_cache_path()
+        data_path, action_labels_path, object_labels_path = self._get_data_and_label_cache_path()
         torch.save(self.data, data_path)
-        torch.save(self.labels, labels_path)
+        torch.save(self.action_labels, action_labels_path)
+        torch.save(self.object_labels, object_labels_path)
 
     def _get_data_and_label_cache_path(self) -> (str, str):
         data_path = os.path.join(self.cache_location, "data.bin")
-        labels_path = os.path.join(self.cache_location, "labels.bin")
+        action_labels_path = os.path.join(self.cache_location, "action_labels.bin")
+        object_labels_path = os.path.join(self.cache_location, "object_labels.bin")
 
-        return data_path, labels_path
+        return data_path, action_labels_path, object_labels_path
 
     def _cache_exists(self) -> bool:
-        data_path, labels_path = self._get_data_and_label_cache_path()
-        return os.path.exists(data_path) and os.path.exists(labels_path)
+        return all(os.path.exists(x) for x in self._get_data_and_label_cache_path())
 
     def load(self):
         if self.use_cache and self._cache_exists():
@@ -140,7 +144,7 @@ class MyDataset(Dataset, Sized):
         if not self.loaded:
             raise Exception("Dataset must be loaded. Please invoke `load()` before continuing")
 
-        return self.data[idx], self.labels[idx]
+        return self.data[idx], self.action_labels[idx], self.object_labels[idx]
 
     def split_dataset(
             self,

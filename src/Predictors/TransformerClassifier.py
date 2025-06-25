@@ -34,13 +34,14 @@ class TransformerClassifier(nn.Module):
     """
     def __init__(self, input_dim: int, num_vectors: int, d_model: int, nhead: int,
                  num_encoder_layers: int, dim_feedforward: int, dropout: float,
-                 num_classes: int):
+                 num_classes_task1: int, num_classes_task2: int):
         super().__init__()
 
         self.input_dim = input_dim          # Dimension of each individual input vector (e.g., 37)
         self.num_vectors = num_vectors      # Number of vectors in the input sequence (e.g., 10)
         self.d_model = d_model              # Dimension of the model's internal representation
-        self.num_classes = num_classes      # Number of output classes for classification
+        self.num_classes_task1 = num_classes_task1      # Number of output classes for task 1 classification
+        self.num_classes_task2 = num_classes_task2      # Number of output classes for task 2 classification
 
         # 1. Input Embedding Layer: Projects each 37-dim vector to d_model
         self.input_projection = nn.Linear(input_dim, d_model)
@@ -62,8 +63,8 @@ class TransformerClassifier(nn.Module):
         )
 
         # 4. Classification Head: Maps the transformer's output to class logits
-        # We'll average the sequence output of the transformer for classification
-        self.classifier_head = nn.Linear(d_model, num_classes)
+        self.classifier_head_task1 = nn.Linear(d_model, num_classes_task1)
+        self.classifier_head_task2 = nn.Linear(d_model, num_classes_task2)
 
         self.init_weights()
 
@@ -71,8 +72,10 @@ class TransformerClassifier(nn.Module):
         """Initializes weights for better training stability."""
         init_range = 0.1
         self.input_projection.weight.data.uniform_(-init_range, init_range)
-        self.classifier_head.bias.data.zero_()
-        self.classifier_head.weight.data.uniform_(-init_range, init_range)
+        self.classifier_head_task1.bias.data.zero_()
+        self.classifier_head_task1.weight.data.uniform_(-init_range, init_range)
+        self.classifier_head_task2.bias.data.zero_()
+        self.classifier_head_task2.weight.data.uniform_(-init_range, init_range)
 
     def forward(self, src: torch.Tensor) -> torch.Tensor:
         """
@@ -116,6 +119,7 @@ class TransformerClassifier(nn.Module):
         avg_output = transformer_output.mean(dim=0)
 
         # Pass through the classification head
-        logits = self.classifier_head(avg_output) # (batch_size, num_classes)
+        logits_task1 = self.classifier_head_task1(avg_output) # (batch_size, num_classes_task1)
+        logits_task2 = self.classifier_head_task2(avg_output) # (batch_size, num_classes_task2)
 
-        return logits
+        return logits_task1, logits_task2
