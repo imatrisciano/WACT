@@ -61,7 +61,7 @@ class MostChangesWorldStatusEncoder(WorldStatusEncoder):
         If there are not enough items, None will be used for padding.
         """
         action_effect = self.change_detector.find_changes_in_file(action_data)
-        objects_and_their_number_of_changes = {obj: obj.number_of_changes() for obj in action_effect.object_changes}
+        objects_and_their_number_of_changes = {obj: obj.get_change_score() for obj in action_effect.object_changes}
         del action_effect
 
         # Sort by most changes

@@ -29,5 +29,8 @@ class ActionEffect:
     def number_of_property_changes(self) -> int:
         return sum([x.number_of_changes() for x in self.object_changes])
 
+    def total_change_score(self) -> float:
+        return sum([x.get_change_score() for x in self.object_changes])
+
     def number_of_changed_objects(self) -> int:
         return len(self.object_changes)

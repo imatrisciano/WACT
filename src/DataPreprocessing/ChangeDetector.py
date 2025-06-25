@@ -12,6 +12,17 @@ class ChangeDetector:
             "objectOrientedBoundingBox",
         ]
 
+        self.object_disappeared_score = 10
+
+        # Some properties change really often but are not very informative
+        # We give those properties a lower score
+        self.less_important_properties_multiplier = 0.1
+        self.less_important_properties: list[str] = [
+            "distance",
+            "visible",
+            "isInteractable"
+        ]
+
     def find_changes_in_file(self, action_data: dict) -> ActionEffect:
         return self.find_changes(action_data["action_name"],
                                  action_data["action_objective_id"],
@@ -44,10 +55,11 @@ class ChangeDetector:
 
         if after_object is None:
             # object disappeared
-            return ObjectChange(before_object["object_id"], [], object_disappeared=True)
+            return ObjectChange(before_object["object_id"], [], self.object_disappeared_score, object_disappeared=True)
 
         changes = self._get_changed_properties(before_object, after_object)
         property_changes: list[PropertyChange] = []
+        total_change_score: float = 0.0
 
         for change_paths in changes:
             for path in change_paths:
@@ -63,12 +75,19 @@ class ChangeDetector:
                     old_property = old_property[key]
                     new_property = new_property[key]
 
-                # build a human-readable version of path
-                # path_str = ".".join(path)
-                # print(f" # '{path_str}' changed '{old_property}' ----> '{new_property}'")
+
                 property_changes.append(PropertyChange(path, old_property, new_property))
 
-        return ObjectChange(before_object["objectId"], property_changes)
+                # build a human-readable version of path
+                path_str = ".".join(path)
+                # print(f" # '{path_str}' changed '{old_property}' ----> '{new_property}'")
+                if path_str in self.less_important_properties:
+                    total_change_score += self.less_important_properties_multiplier
+                else:
+                    total_change_score += 1
+
+
+        return ObjectChange(before_object["objectId"], property_changes, total_change_score)
 
     @staticmethod
     def _is_float(string):
