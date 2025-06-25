@@ -28,10 +28,10 @@ object_encoder = ObjectEncoder()
 world_status_encoder = MostChangesWorldStatusEncoder(object_encoder, number_of_significant_objects=NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS)
 
 for file_path in tqdm(object_store.list_files()):
-    obj = object_store.load(file_path) # load the file from disk
+    action_data = object_store.load(file_path) # load the file from disk
 
     # Prepare the world encoding
-    world_encoding = world_status_encoder.encode_action_data(obj)
+    world_encoding = world_status_encoder.encode_action_data(action_data)
     world_encoding = np.array(world_encoding, dtype=np.float32)
 
     # Prepare network input data
@@ -45,8 +45,8 @@ for file_path in tqdm(object_store.list_files()):
     action_target_encoding = world_encoding[0, object_index, :] # batch, object index in the world encoding, the entirety of the object encoding
     decoded_object = world_status_encoder.object_encoder.decode(list(action_target_encoding)) # decode the object
 
-    true_action_name = obj["action_name"]
-    true_object_id = obj["action_objective_id"]
+    true_action_name = action_data["action_name"]
+    true_object_id = action_data["action_objective_id"]
     decoded_object_id = decoded_object["objectId"]
 
     dataset = classifier_manager.whole_dataset
