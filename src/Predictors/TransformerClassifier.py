@@ -77,7 +77,7 @@ class TransformerClassifier(nn.Module):
         self.classifier_head_task2.bias.data.zero_()
         self.classifier_head_task2.weight.data.uniform_(-init_range, init_range)
 
-    def forward(self, src: torch.Tensor) -> torch.Tensor:
+    def forward(self, src: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         """
         Forward pass of the Transformer Classifier.
 
