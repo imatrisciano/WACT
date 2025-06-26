@@ -368,18 +368,19 @@ class ClassifierManager:
             raise Exception(f"Model file was not found in path {self.model_save_path}.\n"
                             f"Please run the training process or download a pre-trained model")
 
-        print("Warning: loading model with weights_only set to False,\n"
-              "this can be a cybersecurity risk if you don't trust whoever gave you the model file")
+        print("\n\n" + "="*50)
+        print(f"WARNING: loading model '{self.model_save_path}' with weights_only=False")
+        print("This can be a cybersecurity risk if you don't trust whoever gave you the model file.")
 
-        answer = input("Continue anyway (y/N)? ")
-        if answer != "y" and answer != "Y":
+        answer = input(" > Continue anyway? [y/N]: ")
+        if answer.lower().strip() != "y":
             raise Exception("Untrusted model loading was canceled by the user")
 
-        self.model = torch.load("predictor.pth", weights_only=False)
+        self.model = torch.load(self.model_save_path, weights_only=False)
 
     def inference(self, vector) -> (int, str, int):
         """
-        Performes inference on a given numeric vector input
+        Performs inference on a given numeric vector input
         :param vector: input data (encoded before and after action world status)
         :return: the predicted action class number, the corresponding action name, the predicted object index
         """
