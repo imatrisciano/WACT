@@ -8,3 +8,6 @@ protobuf~=6.31.1
 joblib~=1.5.1
 seaborn~=0.13.2
 scikit-learn~=1.7.0
+ai2thor~=5.0.0
+opencv-python~=4.11.0.86
+moviepy~=2.2.1
