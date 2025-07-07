@@ -16,14 +16,7 @@ perform_constants_fixups()
 
 
 def keyboard_play(env, top_down_frames, first_view_frames, is_rotate, rotate_per_frame):
-    first_view_frame = env.last_event.frame
-    cv2.imshow("first_view", cv2.cvtColor(first_view_frame, cv2.COLOR_RGB2BGR))
-
-    # remove the ceiling
-    env.step(action="ToggleMapView")
-    top_down_frame = env.last_event.third_party_camera_frames[0]
-    cv2.imshow("top_view", cv2.cvtColor(top_down_frame, cv2.COLOR_RGB2BGR))
-    env.step(action="ToggleMapView")
+    first_view_frame, top_down_frame = _show_frames(env)
 
     step = 0
     pickup = None
@@ -60,17 +53,29 @@ def keyboard_play(env, top_down_frames, first_view_frames, is_rotate, rotate_per
                 **pose
             )
 
-        first_view_frame = env.last_event.frame
-        cv2.imshow("first_view", cv2.cvtColor(first_view_frame, cv2.COLOR_RGB2BGR))
-
-        # remove the ceiling
-        env.step(action="ToggleMapView")
-        top_down_frame = env.last_event.third_party_camera_frames[0]
-        cv2.imshow("top_view", cv2.cvtColor(top_down_frame, cv2.COLOR_RGB2BGR))
-        env.step(action="ToggleMapView")
+        first_view_frame, top_down_frame = _show_frames(env)
 
         top_down_frames.append(top_down_frame)
         first_view_frames.append(first_view_frame)
+
+
+def _show_frames(env):
+    """
+    Shows and returns both first view and top view frames from the scene
+    :param env: The ai2thor environment
+    :return: first_view_frame, top_down_frame
+    """
+
+    first_view_frame = env.last_event.frame
+    cv2.imshow("first_view", cv2.cvtColor(first_view_frame, cv2.COLOR_RGB2BGR))
+
+    # remove the ceiling
+    env.step(action="ToggleMapView")
+    top_down_frame = env.last_event.third_party_camera_frames[0]
+    cv2.imshow("top_view", cv2.cvtColor(top_down_frame, cv2.COLOR_RGB2BGR))
+    env.step(action="ToggleMapView")
+
+    return first_view_frame, top_down_frame
 
 
 def main(scene_name="FloorPlan205_physics", gridSize=0.25, rotateStepDegrees=15,
