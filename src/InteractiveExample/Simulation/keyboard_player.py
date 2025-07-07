@@ -16,7 +16,7 @@ perform_constants_fixups()
 
 
 def keyboard_play(env, top_down_frames, first_view_frames, is_rotate, rotate_per_frame):
-    first_view_frame, top_down_frame = _show_frames(env)
+    _show_frames(env)
 
     step = 0
     pickup = None
@@ -27,36 +27,46 @@ def keyboard_play(env, top_down_frames, first_view_frames, is_rotate, rotate_per
         step += 1
 
         if keystroke == ord(actionList["FINISH"]):
-            env.stop()
-            cv2.destroyAllWindows()
-            print("action: STOP")
-            break
+            _stop_environment(env)
+            return
 
         action, objectId, pickup = get_action_and_object(keystroke, env, objectId, pickup)
         if action is None:
-            continue
+            continue # no valid action was selected, try again
 
-        # agent step
-        action_has_target: bool = "Object" in action
-        if action_has_target:
-            env.step(action=action, objectId=objectId)
-        else:
-            env.step(action=action)
+        _execute_action(env, action, objectId)
 
         if is_rotate:
-            ## rotation third camera
-            pose = compute_rotate_camera_pose(env.last_event.metadata["sceneBounds"]["center"],
-                                              env.last_event.metadata["thirdPartyCameras"][0], rotate_per_frame)
+            _rotate_third_view_camera(env, rotation_angle=rotate_per_frame)
 
-            env.step(
-                action="UpdateThirdPartyCamera",
-                **pose
-            )
-
+        # Show and get frames
         first_view_frame, top_down_frame = _show_frames(env)
 
         top_down_frames.append(top_down_frame)
         first_view_frames.append(first_view_frame)
+
+
+def _stop_environment(env):
+    env.stop()
+    cv2.destroyAllWindows()
+    print("action: STOP")
+
+def _rotate_third_view_camera(env, rotation_angle):
+    ## rotation third camera
+    pose = compute_rotate_camera_pose(env.last_event.metadata["sceneBounds"]["center"],
+                                      env.last_event.metadata["thirdPartyCameras"][0], rotation_angle)
+    env.step(
+        action="UpdateThirdPartyCamera",
+        **pose
+    )
+
+
+def _execute_action(env, action, objectId):
+    action_has_target: bool = "Object" in action
+    if action_has_target:
+        env.step(action=action, objectId=objectId)
+    else:
+        env.step(action=action)
 
 
 def _show_frames(env):
