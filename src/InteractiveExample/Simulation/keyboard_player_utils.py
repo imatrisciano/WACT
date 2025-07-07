@@ -1,4 +1,5 @@
 import math
+import os
 from typing import Sequence
 
 import cv2
@@ -8,6 +9,8 @@ from moviepy import ImageSequenceClip
 from src.InteractiveExample.Simulation.keyboard_player_constants import VAL_ACTION_OBJECTS, VAL_RECEPTACLE_OBJECTS, \
     actionList
 
+VIDEO_STORE_PATH = "../../data/video/"
+GIF_STORE_PATH = "../../data/gif/"
 
 def show_video(frames: Sequence[np.ndarray], fps: int = 10):
     """Show a video composed of a sequence of frames.
@@ -193,3 +196,26 @@ def get_interact_object(env, action, pickup=None):
             print(objectId)
             break
         return objectId
+
+def save_gifs(scene_name: str, first_view_frames, third_view_frames):
+    """
+    Save the collected frames as GIF files named after the scene name.
+    """
+    if not os.path.exists(GIF_STORE_PATH):
+        os.mkdir(GIF_STORE_PATH)
+    clip = show_video(third_view_frames, fps=5)
+    clip.write_gif(os.path.join(GIF_STORE_PATH, f"third_view_{scene_name}.gif"))
+    clip2 = show_video(first_view_frames, fps=5)
+    clip2.write_gif(os.path.join(GIF_STORE_PATH, f"first_view_{scene_name}.gif"))
+
+
+def save_videos(scene_name: str, first_view_frames, third_view_frames):
+    """
+    Save the collected frames as video files named after the scene name.
+    """
+    if not os.path.exists(VIDEO_STORE_PATH):
+        os.mkdir(VIDEO_STORE_PATH)
+    first_view_video_path = os.path.join(VIDEO_STORE_PATH, f"first_view_{scene_name}.mp4")
+    third_view_video_path = os.path.join(VIDEO_STORE_PATH, f"third_view_{scene_name}.mp4")
+    export_video(first_view_video_path, first_view_frames)
+    export_video(third_view_video_path, third_view_frames)

@@ -15,10 +15,6 @@ from src.InteractiveExample.Simulation.keyboard_player_utils import *
 perform_constants_fixups()
 
 
-VIDEO_PATH = "../../data/video/"
-GIF_PATH = "../../data/gif/"
-
-
 def keyboard_play(env, top_down_frames, first_view_frames, is_rotate, rotate_per_frame):
     first_view_frame = env.last_event.frame
     cv2.imshow("first_view", cv2.cvtColor(first_view_frame, cv2.COLOR_RGB2BGR))
@@ -134,25 +130,11 @@ def main(scene_name="FloorPlan205_physics", gridSize=0.25, rotateStepDegrees=15,
     ## use keyboard control agent
     keyboard_play(controller, third_view_frames, first_view_frames, is_rotate, rotate_per_frame)
 
-    ## use frames generate video
     if generate_video:
+        save_videos(scene_name, first_view_frames, third_view_frames)
 
-        if not os.path.exists(VIDEO_PATH):
-            os.mkdir(VIDEO_PATH)
-
-        export_video(VIDEO_PATH + "first_view_{}.mp4".format(scene_name), first_view_frames)
-        export_video(VIDEO_PATH + "third_view_{}.mp4".format(scene_name), third_view_frames)
-
-    ## use frames generate gif
     if generate_gif:
-
-        if not os.path.exists(VIDEO_PATH):
-            os.mkdir(VIDEO_PATH)
-
-        clip = show_video(third_view_frames, fps=5)
-        clip.write_gif(VIDEO_PATH + "third_view_{}.gif".format(scene_name))
-        clip2 = show_video(first_view_frames, fps=5)
-        clip2.write_gif(VIDEO_PATH + "first_view_{}.gif".format(scene_name))
+        save_gifs(scene_name, first_view_frames, third_view_frames)
 
 
 if __name__ == "__main__":
