@@ -87,6 +87,8 @@ def initialize_side_camera_pose(scene_bound, pose, third_fov=60, slope_degree=45
     return pose
 
 def get_action_and_object(keystroke, env, objectId, pickup) -> tuple:
+    action = None
+
     if keystroke == ord(actionList["MoveAhead"]):
         action = "MoveAhead"
         print("action: MoveAhead")
@@ -144,7 +146,6 @@ def get_action_and_object(keystroke, env, objectId, pickup) -> tuple:
         print("action: SliceObject")
     else:
         print("INVALID KEY", keystroke)
-        return None, None
 
     return action, objectId, pickup
 
