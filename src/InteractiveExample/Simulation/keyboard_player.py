@@ -93,6 +93,14 @@ class KeyboardPlayer:
     def run(self, scene_name="FloorPlan205_physics", gridSize=0.25, rotateStepDegrees=15,
              birds_eye_view=False, slope_degree=45, down_angle=65, use_procthor=False, procthor_scene_file="", procthor_scene_num=100,
              is_rotate=True, rotate_per_frame=6, generate_video=False, generate_gif=False):
+
+        print("You can play using the following keys:")
+        for action in actionList:
+            key = actionList[action]
+            print(f" [{key.upper()}]: {action}")
+        print()
+
+
         ## procthor room
         if use_procthor:
             with gzip.open(procthor_scene_file, "r") as f:
