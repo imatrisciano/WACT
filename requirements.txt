@@ -11,3 +11,7 @@ scikit-learn~=1.7.0
 ai2thor~=5.0.0
 opencv-python~=4.11.0.86
 moviepy~=2.2.1
+ollama~=0.5.1
+langchain-ollama~=0.3.3
+langchain~=0.3.26
+langchain-core~=0.3.68
