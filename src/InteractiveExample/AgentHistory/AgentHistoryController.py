@@ -45,6 +45,16 @@ class AgentHistoryController:
 
         print()
 
+    def get_history(self):
+        if len(self.agent_action_history) == 0:
+            return "The agent execution history is empty"
+
+        history: str = "Here's the agent's execution history:\n"
+        for index, action_info in enumerate(self.agent_action_history):
+            history += f" [{index}]: {action_info.get_short_description()}\n"
+
+        return history
+
     def analyze_all_phantom_actions(self):
         for index, event in enumerate(self.agent_action_history):
             if event.is_phantom():

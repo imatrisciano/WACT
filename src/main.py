@@ -1,6 +1,7 @@
 from tqdm import tqdm
 
 from src.InteractiveExample.AgentHistory.AgentHistoryController import AgentHistoryController
+from src.InteractiveExample.LanguageModel.wact_chatbot import WACTChatBot
 from src.InteractiveExample.Simulation.keyboard_player import KeyboardPlayer
 from src.Predictors.PredictorPipeline import PredictorPipeline
 
@@ -8,7 +9,9 @@ from src.Predictors.PredictorPipeline import PredictorPipeline
 predictor_pipeline = PredictorPipeline()
 
 agent_history_controller = AgentHistoryController(predictor_pipeline)
-player = KeyboardPlayer(agent_history_controller)
+chatbot = WACTChatBot(agent_history_controller)
+
+player = KeyboardPlayer(agent_history_controller, chatbot)
 player.run(scene_name="FloorPlan19_physics",  ## room
      gridSize=0.25, rotateStepDegrees=15,  ## agent step len and rotate degree
      birds_eye_view=False,  ## Bird's-eye view or top view(slope)
