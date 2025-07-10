@@ -152,8 +152,12 @@ class KeyboardPlayer:
         first_view_frames = []
         third_view_frames = []
 
-        ## use keyboard control agent
-        self._keyboard_play(third_view_frames, first_view_frames, is_rotate, rotate_per_frame)
+        try:
+            ## use keyboard control agent
+            self._keyboard_play(third_view_frames, first_view_frames, is_rotate, rotate_per_frame)
+        except KeyboardInterrupt:
+            print("\nSession interrupted by the user.\n")
+            self._stop_environment()
 
         if generate_video:
             save_videos(scene_name, first_view_frames, third_view_frames)
