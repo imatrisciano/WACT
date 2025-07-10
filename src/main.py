@@ -9,7 +9,7 @@ from src.Predictors.PredictorPipeline import PredictorPipeline
 predictor_pipeline = PredictorPipeline()
 
 agent_history_controller = AgentHistoryController(predictor_pipeline)
-chatbot = WACTChatBot(agent_history_controller)
+chatbot = WACTChatBot(agent_history_controller, model_name="qwen3:8b")
 
 player = KeyboardPlayer(agent_history_controller, chatbot)
 player.run(scene_name="FloorPlan19_physics",  ## room

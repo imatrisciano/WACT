@@ -35,12 +35,12 @@ If you wish to switch to another inference engine, e.g. if you wish to use an on
 
 After installing ollama, make sure the chosen large language model's files are available by downloading them:
 ```bash
-ollama pull qwen3:1.7b
+ollama pull qwen3:8b
 ```
 
 You can test that the model is working by running:
 ```bash
-ollama run qwen3:1.7b
+ollama run qwen3:8b
 ```
 
 ---
