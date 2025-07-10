@@ -78,15 +78,15 @@ class PredictorPipeline:
         true_action_name = action_data["action_name"]
         true_object_id = action_data["action_objective_id"]
 
-        return detected_action_name, detected_object_id, true_action_name, true_object_id
+        return detected_action_name, detected_object_id, predicted_action_confidence, predicted_object_confidence, true_action_name, true_object_id
 
-    def predict_from_before_and_after_world_status(self, before_world_status: dict, after_world_status: dict):
+    def predict_from_before_and_after_object_lists(self, objects_before_action: list, objects_after_action: list):
         action_data = {
             "before_world_status": {
-                "objects": before_world_status['objects']
+                "objects": objects_before_action
             },
             "after_world_status": {
-                "objects": after_world_status['objects']
+                "objects": objects_after_action
             },
             "action_name": "",
             "action_objective_id": "",

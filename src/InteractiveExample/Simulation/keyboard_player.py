@@ -3,6 +3,7 @@
 
 import json
 import gzip
+import traceback
 from typing import Optional
 
 import ai2thor.server
@@ -11,14 +12,26 @@ from tqdm import tqdm
 from ai2thor.controller import Controller
 from ai2thor.platform import CloudRendering
 
+from src.InteractiveExample.AgentHistory.AgentHistoryController import AgentHistoryController
 from src.InteractiveExample.Simulation.keyboard_player_constants import perform_constants_fixups
 from src.InteractiveExample.Simulation.keyboard_player_utils import *
 
 
 class KeyboardPlayer:
-    def __init__(self):
+    def __init__(self, agent_history_controller: Optional[AgentHistoryController] = None):
         perform_constants_fixups()
+
+        self.next_action_is_phantom: bool = False
+
         self.controller: Controller = None
+        self.agent_history_controller: Optional[AgentHistoryController] = agent_history_controller
+
+    def _has_agent_history(self):
+        """
+        Checks if an agent history controller was provided during initialization
+        :return: True if an agent history controller was provided during initialization, False otherwise
+        """
+        return self.agent_history_controller is not None
 
     def _keyboard_play(self, top_down_frames, first_view_frames, is_rotate, rotate_per_frame):
         self._show_frames()
@@ -28,28 +41,66 @@ class KeyboardPlayer:
         objectId = None
 
         while True:
-            keystroke = cv2.waitKey(0)
-            step += 1
+            try:
+                keystroke = cv2.waitKey(0)
+                step += 1
 
-            if keystroke == ord(actionList["FINISH"]):
+                if keystroke == ord(actionList["FINISH"]):
+                    self._stop_environment()
+                    return
+                elif keystroke == ord("i"):
+                    if self._has_agent_history():
+                        self.next_action_is_phantom = not self.next_action_is_phantom
+                        print(f"Next action is phantom: {self.next_action_is_phantom}")
+                elif keystroke == ord("h"):
+                    if self._has_agent_history():
+                        self.agent_history_controller.print_history()
+                elif keystroke == ord("j"):
+                    if self._has_agent_history():
+                        self.agent_history_controller.analyze_all_phantom_actions()
+                        self.agent_history_controller.print_history()
+                else:
+                    # Figure out action name and target based on input and user choices
+                    action, objectId, pickup = get_action_and_object(keystroke, self.controller, objectId, pickup)
+                    if action is None:
+                        continue # no valid action was selected, try again
+
+                    # Executes the action and gets the resulting event
+                    event = self._execute_action(action, objectId)
+
+                    # Register what happened in the history controller
+                    if self._has_agent_history():
+                        self._register_action(action, objectId, event)
+
+                    if is_rotate:
+                        self._rotate_third_view_camera(rotation_angle=rotate_per_frame)
+
+                    # Show and get frames
+                    first_view_frame, top_down_frame = self._show_frames()
+
+                    top_down_frames.append(top_down_frame)
+                    first_view_frames.append(first_view_frame)
+            except KeyboardInterrupt:
                 self._stop_environment()
                 return
+            except Exception as e:
+                print("Error while performing this action:")
+                traceback.print_exception(e)
 
-            action, objectId, pickup = get_action_and_object(keystroke, self.controller, objectId, pickup)
-            if action is None:
-                continue # no valid action was selected, try again
 
-            self._execute_action(action, objectId)
 
-            if is_rotate:
-                self._rotate_third_view_camera(rotation_angle=rotate_per_frame)
+    def _register_action(self, action, objectId, event):
+        ignored_actions = ["MoveAhead", "MoveLeft", "MoveRight", "MoveBack", "RotateLeft", "RotateRight", "LookUp", "LookDown"]
+        if action in ignored_actions:
+            self.agent_history_controller.update_current_world_status(event.metadata)
+            return
 
-            # Show and get frames
-            first_view_frame, top_down_frame = self._show_frames()
-
-            top_down_frames.append(top_down_frame)
-            first_view_frames.append(first_view_frame)
-
+        action_object = objectId if self._action_has_target(action) else None
+        if self.next_action_is_phantom:
+            self.agent_history_controller.add_phantom_event(event.metadata)
+            self.next_action_is_phantom = False
+        else:
+            self.agent_history_controller.add_event(action, action_object, event.metadata)
 
     def _stop_environment(self):
         self.controller.stop()
@@ -160,6 +211,10 @@ class KeyboardPlayer:
             fieldOfView=third_fov,
             **pose
         )
+
+        # Bootstrap the agent history controller
+        if self._has_agent_history():
+            self.agent_history_controller.set_initial_world_status(event.metadata)
 
         ## collect frame
         first_view_frames = []
