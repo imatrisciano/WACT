@@ -148,7 +148,16 @@ class KeyboardPlayer:
         """
 
         first_view_frame = self.controller.last_event.frame
-        cv2.imshow("first_view", cv2.cvtColor(first_view_frame, cv2.COLOR_RGB2BGR))
+        converted_frame = cv2.cvtColor(first_view_frame, cv2.COLOR_RGB2BGR)
+
+        position = (5,30)
+        position2 = (5,50)
+        cv2.putText(converted_frame, "[P]: FINISH, [Z]: PickupObject, [X]: PutObject, [C]: OpenObject, [V]: CloseObject, [B]: ToggleObjectOn, [N]: ToggleObjectOff, [M]: SliceObject",
+                    org=position, fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(0,0,0))
+        cv2.putText(converted_frame,
+                    "[I]: Toggle phantom, [H]: Show history, [J]: Figure out phantom actions, [K]: Invoke chatbot",
+                    org=position2, fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(0, 0, 0))
+        cv2.imshow("first_view", converted_frame)
 
         # remove the ceiling
         self.controller.step(action="ToggleMapView")
