@@ -395,12 +395,14 @@ class ClassifierManager:
 
             action_probabilities = torch.softmax(output_logits_action_classifier, dim=1)
             predicted_action_class_index = torch.argmax(action_probabilities, dim=1).item()
+            predicted_action_confidence = action_probabilities[0, predicted_action_class_index].item()
 
             object_probabilities = torch.softmax(output_logits_object_classifier, dim=1)
             predicted_object_class_index = torch.argmax(object_probabilities, dim=1).item()
+            predicted_object_confidence = object_probabilities[0, predicted_object_class_index].item()
 
         action_name = self.whole_dataset.id2label(predicted_action_class_index)
 
-        return predicted_action_class_index, action_name, predicted_object_class_index
+        return predicted_action_class_index, action_name, predicted_object_class_index, predicted_action_confidence, predicted_object_confidence
 
 

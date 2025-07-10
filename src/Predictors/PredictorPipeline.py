@@ -55,14 +55,14 @@ class PredictorPipeline:
         world_encoding = np.reshape(world_encoding, network_input_shape)
 
         # Run inference
-        action_class, action_class_name, object_index = self.classifier_manager.inference(world_encoding)
+        action_class, action_class_name, object_index, predicted_action_confidence, predicted_object_confidence = self.classifier_manager.inference(world_encoding)
 
         # Retrieve the action target encoding from the world encoding and the object index inferred by the network
         action_target_encoding = world_encoding[0, object_index, :]  # batch, object index in the world encoding, the entirety of the object encoding
         decoded_object = self.world_status_encoder.object_encoder.decode(action_target_encoding)  # decode the object
 
         decoded_object_id = decoded_object["objectId"]
-        return action_class_name, decoded_object_id
+        return action_class_name, decoded_object_id, predicted_action_confidence, predicted_object_confidence
 
     def predict_from_file(self, file_path):
         """
@@ -73,7 +73,7 @@ class PredictorPipeline:
 
         action_data = self.object_store.load(file_path)  # load the file from disk
 
-        detected_action_name, detected_object_id = self.predict(action_data)
+        detected_action_name, detected_object_id, predicted_action_confidence, predicted_object_confidence = self.predict(action_data)
 
         true_action_name = action_data["action_name"]
         true_object_id = action_data["action_objective_id"]
