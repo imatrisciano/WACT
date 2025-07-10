@@ -3,7 +3,9 @@
 
 import json
 import gzip
-import os
+from typing import Optional
+
+import ai2thor.server
 from tqdm import tqdm
 
 from ai2thor.controller import Controller
@@ -64,12 +66,23 @@ class KeyboardPlayer:
             **pose
         )
 
-    def _execute_action(self, action, objectId):
-        action_has_target: bool = "Object" in action
-        if action_has_target:
-            self.controller.step(action=action, objectId=objectId)
+    def _execute_action(self, action: str, objectId: Optional[str]) -> ai2thor.server.Event:
+        """
+        Executes the given action on the given objectId and returns the resulting event
+        :param action: Name of the action to execute
+        :param objectId: (Optional) The objectId to execute the action on
+        :return: Action's resulting event
+        """
+
+        if self._action_has_target(action):
+            return self.controller.step(action=action, objectId=objectId)
         else:
-            self.controller.step(action=action)
+            return self.controller.step(action=action)
+
+    @staticmethod
+    def _action_has_target(action_name: str):
+        action_has_target: bool = "Object" in action_name
+        return action_has_target
 
     def _show_frames(self):
         """
