@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 from torch import nn, optim
+from torchinfo import summary
 from torch.utils.data import DataLoader
 
 from src.Predictors.MyDataset import MyDataset
@@ -362,6 +363,9 @@ class ClassifierManager:
 
         torch.save(self.model, self.model_save_path)
         print(f"Model saved of file {self.model_save_path}")
+
+        # Print the model summary
+        summary(self.model)
 
     def load_model(self):
         if not os.path.exists(self.model_save_path):

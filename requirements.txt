@@ -15,3 +15,4 @@ ollama~=0.5.1
 langchain-ollama~=0.3.3
 langchain~=0.3.26
 langchain-core~=0.3.68
+torchinfo~=1.8.0
