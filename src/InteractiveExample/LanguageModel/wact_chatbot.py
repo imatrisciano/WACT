@@ -17,8 +17,11 @@ class WACTChatBot:
 
         prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", "You are an AI assistant supervising an autonomous agent. Your role is to help the user understand what the agent is up to and what happens in the scene."
-                                       "You may call tools to help with the request, but you are allowed to answer normally if no tool is available for the job"),
+                ("system", "You are an AI assistant supervising an autonomous agent. Your role is to help the user understand what the agent is up to and what happens in the scene.\n"
+                            "You may call tools to help with the request, but you are allowed to answer normally if no tool is available for the job.\n"
+                            "Be concise with your answers, summarize if necessary.\n"
+                            "The tools you have access to let you know the execution history of the agent. The execution history is a sequence of events. Each event has an action and, optionally an action target. Both the action and the action target have a confidence score.\n"
+                            "Some actions are not recognized by the agent, those are known as 'phantom actions'. Phantom actions need to be analyzed using the tool in order to explain them."),
                 ("placeholder", "{chat_history}"),
                 ("human", "{input}"),
                 ("placeholder", "{agent_scratchpad}"),
