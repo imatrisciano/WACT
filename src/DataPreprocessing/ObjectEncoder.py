@@ -1,5 +1,4 @@
 import sys
-import numpy as np
 
 class ObjectEncoder:
     def __init__(self):
@@ -296,7 +295,7 @@ class ObjectEncoder:
         #return torch.tensor(features, dtype=torch.float32).to(self.device)
         return features
 
-    def decode(self, features: list | np.array) -> dict:
+    def decode(self, features: list) -> dict:
         output_object = {}
 
         for feature_path, feature_value in zip(self._FEATURE_ORDER, features):
