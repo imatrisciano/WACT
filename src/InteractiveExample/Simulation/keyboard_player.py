@@ -13,18 +13,20 @@ from ai2thor.controller import Controller
 from ai2thor.platform import CloudRendering
 
 from src.InteractiveExample.AgentHistory.AgentHistoryController import AgentHistoryController
+from src.InteractiveExample.LanguageModel.wact_chatbot import WACTChatBot
 from src.InteractiveExample.Simulation.keyboard_player_constants import perform_constants_fixups
 from src.InteractiveExample.Simulation.keyboard_player_utils import *
 
 
 class KeyboardPlayer:
-    def __init__(self, agent_history_controller: Optional[AgentHistoryController] = None):
+    def __init__(self, agent_history_controller: Optional[AgentHistoryController] = None, chatbot: Optional[WACTChatBot] = None):
         perform_constants_fixups()
 
         self.next_action_is_phantom: bool = False
 
-        self.controller: Controller = None
+        self.controller: Controller
         self.agent_history_controller: Optional[AgentHistoryController] = agent_history_controller
+        self.chatbot: Optional[WACTChatBot] = chatbot
 
     def _has_agent_history(self):
         """
@@ -59,6 +61,9 @@ class KeyboardPlayer:
                     if self._has_agent_history():
                         self.agent_history_controller.analyze_all_phantom_actions()
                         self.agent_history_controller.print_history()
+                elif keystroke == ord("k"):
+                    if self.chatbot is not None:
+                        self.chatbot.chat_now()
                 else:
                     # Figure out action name and target based on input and user choices
                     action, objectId, pickup = get_action_and_object(keystroke, self.controller, objectId, pickup)

@@ -4,10 +4,17 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from langchain_ollama import ChatOllama
 
+from src.InteractiveExample.AgentHistory.AgentHistoryController import AgentHistoryController
+from src.Predictors.PredictorPipeline import PredictorPipeline
 from src.Utils.Colors import Colors
 
 class WACTChatBot:
-    def __init__(self, model_name: str = "qwen3:1.7b", extract_reasoning: bool = False):
+    singleton = None
+
+    def __init__(self, agent_history_controller: AgentHistoryController, model_name: str = "qwen3:1.7b", extract_reasoning: bool = False):
+        WACTChatBot.singleton = self
+        self.agent_history_controller = agent_history_controller
+
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", "You are an AI assistant supervising an autonomous agent. Your role is to help the user understand what the agent is up to and what happens in the scene."
@@ -20,16 +27,39 @@ class WACTChatBot:
 
         model = ChatOllama(model=model_name, extract_reasoning=extract_reasoning)
 
-        tools = [self.magic_function]
+        tools = [self.get_execution_history, self.figure_out_all_phantom_actions, self.figure_a_specific_phantom_actions]
         self.chat_history = []
 
         agent = create_tool_calling_agent(model, tools, prompt)
         self.agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False)
 
     @tool
-    def magic_function(self, input: int) -> int:
-        """Returns the magic number of the input."""
-        return input + 2
+    def get_execution_history() -> str:
+        """
+        Returns the entire execution history of the agent, ready to be displayed or summarized for the user.
+        The execution history is a sequence of events containing: the event's index, the action name, the confidence on the action name, the target objective id, the confidence on the target objective id.
+        """
+        return WACTChatBot.singleton.agent_history_controller.get_history()
+
+    @staticmethod
+    @tool
+    def figure_out_all_phantom_actions():
+        """Updates the execution history of the agent in such a way to figure out currently Unknown phantom actions, then returns the updated execution history"""
+        WACTChatBot.singleton.agent_history_controller.analyze_all_phantom_actions()
+
+        message = "Every unknown phantom action was analyzed. "
+        message += WACTChatBot.singleton.agent_history_controller.get_history()
+        return message
+
+    @staticmethod
+    @tool
+    def figure_a_specific_phantom_actions(action_index: int) -> str:
+        """Updates the execution history of the agent in such a way to figure out the specified Unknown phantom actions, then returns the updated action event"""
+        WACTChatBot.singleton.agent_history_controller.figure_out_phantom_action(action_index)
+
+        message = "The prediction model was executed on the given action. Here is the resulting prediction on said action:\n"
+        message += WACTChatBot.singleton.agent_history_controller.agent_action_history[action_index].get_short_description()
+        return message
 
     @staticmethod
     def _pretty_print_model_output(model_output: str):
