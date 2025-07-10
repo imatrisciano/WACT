@@ -9,8 +9,8 @@ from moviepy import ImageSequenceClip
 from src.InteractiveExample.Simulation.keyboard_player_constants import VAL_ACTION_OBJECTS, VAL_RECEPTACLE_OBJECTS, \
     actionList
 
-VIDEO_STORE_PATH = "../../data/video/"
-GIF_STORE_PATH = "../../data/gif/"
+VIDEO_STORE_PATH = "../data/video/"
+GIF_STORE_PATH = "../data/gif/"
 
 def show_video(frames: Sequence[np.ndarray], fps: int = 10):
     """Show a video composed of a sequence of frames.
