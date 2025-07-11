@@ -34,7 +34,11 @@ class DatasetAnalyzer:
         for file_path in tqdm(self.object_store.list_files()):
 
             # Read and deserialize the file
-            obj: dict = self.object_store.load(file_path)
+            try:
+                obj: dict = self.object_store.load(file_path)
+            except Exception as e:
+                print(f"\rLoading file '{file_path}' failed: {e}", flush=True)
+                continue
 
             # Read action_name from the file and populate the statistics
             if 'action_name' in obj:
