@@ -49,7 +49,7 @@ class DatasetAnalyzer:
             self.action_property_changes.append(action_effect.number_of_property_changes())
             self.action_object_changes.append(action_effect.number_of_changed_objects())
 
-            if not action_effect.action_name in self.actions_names:
+            if action_effect.action_name not in self.actions_names:
                 self.actions_names.append(action_effect.action_name)
 
             for changed_object in action_effect.object_changes:
