@@ -76,8 +76,10 @@ class ClassifierManager:
         self.model.to(self.device)
         print("Model moved to device")
 
+        print(f"Training for {self.NUM_EPOCHS} epochs...")
         for epoch in range(self.NUM_EPOCHS):
-            self._train_epoch(epoch, train_loader)
+            avg_action_train_loss, train_action_accuracy, avg_object_train_loss, train_object_accuracy = (
+                self._train_epoch(epoch, train_loader))
             val_action_loss, val_action_accuracy,\
                 val_object_loss, val_object_accuracy = self._compute_validation_loss_and_accuracy(val_loader)
 
@@ -87,12 +89,24 @@ class ClassifierManager:
             self.val_object_losses.append(val_object_loss)
             self.val_object_accuracies.append(val_object_accuracy)
 
-            print(f"  Validation Action Loss: {val_action_loss:.4f}, Accuracy: {val_action_accuracy:.3f}%")
-            print(f"  Validation Object Loss: {val_object_loss:.4f}, Accuracy: {val_object_accuracy:.3f}%\n")
+            #print(f"  Validation Action Loss: {val_action_loss:.4f}, Accuracy: {val_action_accuracy:.3f}%")
+            #print(f"  Validation Object Loss: {val_object_loss:.4f}, Accuracy: {val_object_accuracy:.3f}%\n")
+
+            print(f"[EPOCH]: {epoch + 1}/{self.NUM_EPOCHS} "
+                  f"\t[Action TRAIN ACC]: {train_action_accuracy:.4f}%"
+                  f"\t[Action VAL ACC]: {val_action_accuracy:.4f}%"
+                  f"\t[Object TRAIN ACC]: {train_object_accuracy:.4f}%"
+                  f"\t[Object VAL ACC]: {val_object_accuracy:.4f}%")
 
         print("Training finished!")
 
-    def _train_epoch(self, epoch, train_loader):
+    def _train_epoch(self, epoch, train_loader) -> (float, float, float, float):
+        """
+        Trains the model for one epoch.
+        :param epoch: the current epoch number
+        :param train_loader: the training set loader
+        :return: avg_action_train_loss, train_action_accuracy, avg_object_train_loss, train_object_accuracy
+        """
         self.model.train()  # Set model to training mode
 
         total_action_loss = 0
@@ -151,10 +165,11 @@ class ClassifierManager:
         self.train_object_losses.append(avg_object_train_loss)
         self.train_object_accuracies.append(train_object_accuracy)
 
+        #print(f"Epoch [{epoch + 1}/{self.NUM_EPOCHS}] completed.")
+        #print(f"  Training Action Loss: {avg_action_train_loss:.4f}, Accuracy: {train_action_accuracy:.2f}%")
+        #print(f"  Training Object Loss: {avg_object_train_loss:.4f}, Accuracy: {train_object_accuracy:.2f}%")
 
-        print(f"Epoch [{epoch + 1}/{self.NUM_EPOCHS}] completed.")
-        print(f"  Training Action Loss: {avg_action_train_loss:.4f}, Accuracy: {train_action_accuracy:.2f}%")
-        print(f"  Training Object Loss: {avg_object_train_loss:.4f}, Accuracy: {train_object_accuracy:.2f}%")
+        return avg_action_train_loss, train_action_accuracy, avg_object_train_loss, train_object_accuracy
 
 
     def _compute_validation_loss_and_accuracy(self, data_loader) -> (float, float):
