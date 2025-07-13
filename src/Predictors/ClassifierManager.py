@@ -53,9 +53,9 @@ class ClassifierManager:
         self.DROPOUT = 0.1             # Dropout rate
 
         # Learning parameters
-        self.LEARNING_RATE = 0.0005
+        self.LEARNING_RATE = 0.001
         self.BATCH_SIZE = 256
-        self.NUM_EPOCHS = 50           # Number of training epochs
+        self.NUM_EPOCHS = 150           # Number of training epochs
 
         self.model_save_path = model_save_path
 
