@@ -47,6 +47,7 @@ class MyDataset(Dataset, Sized):
             10: "Empty Object",
             11: "Close Object",
             12: "Clean Object",
+            13: "Put Object"
         }
         self.label_to_id_map = {v: k for k, v in self.id_to_labels_map.items()}
 

@@ -42,7 +42,7 @@ class ClassifierManager:
         self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS = number_of_significant_objects # How many objects to consider when analyzing an executed action
         self.INPUT_DIM = 37            # Length of each object encoding vector
         self.NUM_VECTORS = 2 * self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS           # Number of vectors in the input sequence = 2*number_of_significant_objects since we store both before and after action objects
-        self.NUM_ACTION_CLASSES = 13          # Number of possible output classes (for softmax)
+        self.NUM_ACTION_CLASSES = 14          # Number of possible output classes (for softmax)
         self.NUM_OBJECT_CLASSES = self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS
 
         # Model parameters
