@@ -46,10 +46,10 @@ class ClassifierManager:
         self.NUM_OBJECT_CLASSES = self.NUMBER_OF_ACTION_SIGNIFICANT_OBJECTS
 
         # Model parameters
-        self.D_MODEL = 32             # Embedding dimension for the transformer
-        self.NHEAD = 2                 # Number of attention heads (must divide D_MODEL)
-        self.NUM_ENCODER_LAYERS = 4    # Number of transformer encoder layers
-        self.DIM_FEEDFORWARD = 512     # Dimension of the feedforward network in transformer
+        self.D_MODEL = 64             # Embedding dimension for the transformer
+        self.NHEAD = 1                 # Number of attention heads (must divide D_MODEL)
+        self.NUM_ENCODER_LAYERS = 3    # Number of transformer encoder layers
+        self.DIM_FEEDFORWARD = 16     # Dimension of the feedforward network in transformer
         self.DROPOUT = 0.1             # Dropout rate
 
         # Learning parameters
