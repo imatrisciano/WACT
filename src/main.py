@@ -47,6 +47,11 @@ def launch_classifier():
         print("Stopped by the user")
 
 def choose_option():
+    """
+    Lets the user pick an option to use this tool
+    """
+
+    # All the available options, expressed as "option text": option_function
     options = {
         "Analyze dataset": analyze_dataset,
         "Dataset grid search (to find the best parameters)": predictor_pipeline.grid_search,
@@ -56,19 +61,24 @@ def choose_option():
         "Exit": exit
     }
 
+    # Present the options
     print("What are you up to?")
     for index, option_name in enumerate(options.keys()):
         print(f"[{index}]: {option_name}")
     print()
 
+    # Keep on asking the next thing to do until the user decides to exit
     while True:
         user_choice = input("> ")
         try:
-            user_choice = int(user_choice)
+            # Convert user text to int, will throw a ValueError if it fails
+            user_choice = int(user_choice.strip())
+
+            # Boundaries check
             if user_choice < 0 or user_choice >= len(options):
                 raise ValueError
 
-            #Invoke that function
+            # Checks passed, invoke that function
             chosen_entry = list(options.keys())[user_choice]
             function_to_call = options[chosen_entry]
             function_to_call() # call it
