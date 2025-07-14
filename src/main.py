@@ -53,7 +53,8 @@ def choose_option():
         "Analyze dataset": analyze_dataset,
         "Train classifier": train_classifier,
         "Launch classifier": launch_classifier,
-        "Play": play
+        "Play": play,
+        "Exit": exit
     }
 
     print("What are you up to?")
