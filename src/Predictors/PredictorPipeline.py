@@ -38,6 +38,9 @@ class PredictorPipeline:
     def train(self):
         self.classifier_manager.train()
 
+    def grid_search(self):
+        self.classifier_manager.train(perform_grid_search=True)
+
     def predict(self, action_data: dict) -> (str, str):
         """
         Performs action and action target prediction given the action data

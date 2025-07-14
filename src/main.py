@@ -15,9 +15,6 @@ def analyze_dataset():
     dataset_analyzer = DatasetAnalyzer(object_store=predictor_pipeline.object_store, change_detector=ChangeDetector())
     dataset_analyzer.plot_dataset_info()
 
-def train_classifier():
-    predictor_pipeline.train()
-
 def play():
     agent_history_controller = AgentHistoryController(predictor_pipeline)
     chatbot = WACTChatBot(agent_history_controller, model_name="qwen3:8b")
@@ -52,7 +49,8 @@ def launch_classifier():
 def choose_option():
     options = {
         "Analyze dataset": analyze_dataset,
-        "Train classifier": train_classifier,
+        "Dataset grid search (to find the best parameters)": predictor_pipeline.grid_search,
+        "Train classifier (with known best parameters)": predictor_pipeline.train,
         "Launch classifier": launch_classifier,
         "Play": play,
         "Exit": exit

@@ -63,6 +63,7 @@ class ClassifierManager:
             self,
             train_loader: DataLoader,
             val_loader: DataLoader,
+            print_epoch_progress: bool = True,
         ):
         """
         Trains the transformer classifier.
@@ -92,11 +93,12 @@ class ClassifierManager:
             #print(f"  Validation Action Loss: {val_action_loss:.4f}, Accuracy: {val_action_accuracy:.3f}%")
             #print(f"  Validation Object Loss: {val_object_loss:.4f}, Accuracy: {val_object_accuracy:.3f}%\n")
 
-            print(f"[EPOCH]: {epoch + 1}/{self.NUM_EPOCHS} "
-                  f"\t[Action TRAIN ACC]: {train_action_accuracy:.4f}%"
-                  f"\t[Action VAL ACC]: {val_action_accuracy:.4f}%"
-                  f"\t[Object TRAIN ACC]: {train_object_accuracy:.4f}%"
-                  f"\t[Object VAL ACC]: {val_object_accuracy:.4f}%")
+            if print_epoch_progress:
+                print(f"[EPOCH]: {epoch + 1}/{self.NUM_EPOCHS} "
+                      f"\t[Action TRAIN ACC]: {train_action_accuracy:.4f}%"
+                      f"\t[Action VAL ACC]: {val_action_accuracy:.4f}%"
+                      f"\t[Object TRAIN ACC]: {train_object_accuracy:.4f}%"
+                      f"\t[Object VAL ACC]: {val_object_accuracy:.4f}%")
 
         print("Training finished!")
 
@@ -216,7 +218,7 @@ class ClassifierManager:
 
         return avg_action_loss, action_accuracy, avg_object_loss, object_accuracy
 
-    def _validate_model(self, data_loader, task: Literal["action", "object"]) -> (float, float):
+    def _validate_model(self, data_loader, task: Literal["action", "object"], plot_confusion_matrix:bool = True) -> (float, float):
         """
         Computes the model's loss and accuracy on the given data_loader and builds and shows the confusion matrix
         :param data_loader: Provider of the validation data
@@ -271,13 +273,14 @@ class ClassifierManager:
         else:
             raise NotImplementedError
 
-        plt.figure(figsize=(11, 10))
-        plt.subplots_adjust(left=0.17, bottom=0.17, right=1, top=0.95) # better centering of the image, empirical values
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
-        plt.xlabel('Predicted Label', fontsize=12)
-        plt.ylabel('True Label', fontsize=12)
-        plt.title('Confusion Matrix')
-        plt.show()
+        if plot_confusion_matrix:
+            plt.figure(figsize=(11, 10))
+            plt.subplots_adjust(left=0.17, bottom=0.17, right=1, top=0.95) # better centering of the image, empirical values
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+            plt.xlabel('Predicted Label', fontsize=12)
+            plt.ylabel('True Label', fontsize=12)
+            plt.title('Confusion Matrix')
+            plt.show()
 
         avg_loss = val_total_loss / len(data_loader)
         accuracy = 100 * val_correct_predictions / val_total_samples
@@ -323,7 +326,7 @@ class ClassifierManager:
 
         plt.show()
 
-    def train(self):
+    def train(self, perform_grid_search: bool = False):
         # Device configuration
         print(f"Using device: {self.device}")
 
@@ -342,45 +345,88 @@ class ClassifierManager:
             batch_size=self.BATCH_SIZE,
             shuffle_dataset=True)
 
+        if perform_grid_search:
+            self._perform_grid_search(test_loader, train_loader, validation_loader)
+        else:
+            test_action_accuracy, test_object_accuracy = (
+                self._define_and_train_classifier(test_loader, train_loader, validation_loader, self.D_MODEL,
+                                                  self.NUM_ENCODER_LAYERS, self.NHEAD,
+                                                  self.DIM_FEEDFORWARD, is_grid_search=False))
+
+            print(f"\nTest action accuracy: {test_action_accuracy}"
+                  f"\nTest object accuracy: {test_object_accuracy}")
+
+            summary(self.model)
+            self.plot_training_graphs()
+
+            print("Saving model...")
+            torch.save(self.model, self.model_save_path)
+            print(f"Model saved of file {self.model_save_path}")
+
+    def _perform_grid_search(self, test_loader, train_loader, validation_loader):
+        best_combined_accuracy = 0 # Used to keep track of the best model found so far
+
+        for model_size in [16, 32, 64, 128]:
+            for number_of_encoder_layers in [1, 2, 3, 10]:
+                for number_of_attention_heads in [1, 2, 4, 8]:
+                    for feedforward_size in [8, 16, 32, 64]:
+                        print(f"Testing size={model_size}, layers={number_of_encoder_layers}, heads={number_of_attention_heads}, feedforward={feedforward_size}...")
+
+                        # train the model and get the test accuracy
+                        test_action_accuracy, test_object_accuracy = (
+                            self._define_and_train_classifier(test_loader, train_loader, validation_loader, model_size,
+                                                              number_of_encoder_layers, number_of_attention_heads,
+                                                              feedforward_size, is_grid_search=True))
+
+                        # Calculate the combined accuracy by averaging action and object test accuracies
+                        combined_accuracy = (test_action_accuracy + test_object_accuracy) / 2
+
+                        # If a new best is found, print its parameters
+                        if combined_accuracy > best_combined_accuracy:
+                            best_combined_accuracy = combined_accuracy
+                            print()
+                            print(f" ### New best model found! ###"
+                                  f"\nModel size: {model_size}"
+                                  f"\nNumber of encoder layers: {number_of_encoder_layers}"
+                                  f"\nNumber of attention heads: {number_of_attention_heads}"
+                                  f"\nFeedforward size: {feedforward_size}"
+                                  f"\nTest action accuracy: {test_action_accuracy}"
+                                  f"\nTest object accuracy: {test_object_accuracy}"
+                                  f"\nCombined accuracy: {combined_accuracy}")
+                            summary(self.model)
+                            print()
+
+    def _define_and_train_classifier(self, test_loader, train_loader, validation_loader, model_size, number_of_encoder_layers, number_of_attention_heads, feedforward_size, is_grid_search:bool = False):
         # Initialize Model, Loss, and Optimizer
         print("Initializing model, loss function, and optimizer...")
         self.model = TransformerClassifier(
             input_dim=self.INPUT_DIM,
             num_vectors=self.NUM_VECTORS,
-            d_model=self.D_MODEL,
-            nhead=self.NHEAD,
-            num_encoder_layers=self.NUM_ENCODER_LAYERS,
-            dim_feedforward=self.DIM_FEEDFORWARD,
+            d_model=model_size,
+            nhead=number_of_attention_heads,
+            num_encoder_layers=number_of_encoder_layers,
+            dim_feedforward=feedforward_size,
             dropout=self.DROPOUT,
             num_classes_task1=self.NUM_ACTION_CLASSES,
             num_classes_task2=self.NUM_OBJECT_CLASSES
         )
 
-        self.action_criterion = nn.CrossEntropyLoss() # Includes softmax implicitly
+        self.action_criterion = nn.CrossEntropyLoss()  # Includes softmax implicitly
         self.object_criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.LEARNING_RATE)
 
         # Start training
         print("Starting training process...")
-        self._train_classifier(train_loader, validation_loader)
-
-        print("Evaluating test accuracy for Action prediction...")
-        test_action_loss, test_action_accuracy = self._validate_model(test_loader, task="action")
+        self._train_classifier(train_loader, validation_loader, print_epoch_progress=not is_grid_search)
+        #print("Evaluating test accuracy for Action prediction...")
+        test_action_loss, test_action_accuracy = self._validate_model(test_loader, task="action", plot_confusion_matrix=not is_grid_search)
         print(f"Test Loss for Action Prediction: {test_action_loss:.4f}, Test Accuracy for Action Prediction: {test_action_accuracy:.3f}%\n")
-
-        print("Evaluating test accuracy for Object prediction...")
-        test_object_loss, test_object_accuracy = self._validate_model(test_loader, task="object")
+        #print("Evaluating test accuracy for Object prediction...")
+        test_object_loss, test_object_accuracy = self._validate_model(test_loader, task="object", plot_confusion_matrix=not is_grid_search)
         print(f"Test Loss for Object Prediction: {test_object_loss:.4f}, Test Accuracy for Object Prediction: {test_object_accuracy:.3f}%\n")
 
-        self.plot_training_graphs()
+        return test_action_accuracy, test_object_accuracy
 
-        print("Saving model...")
-
-        torch.save(self.model, self.model_save_path)
-        print(f"Model saved of file {self.model_save_path}")
-
-        # Print the model summary
-        summary(self.model)
 
     def load_model(self):
         if not os.path.exists(self.model_save_path):
