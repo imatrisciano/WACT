@@ -1,5 +1,6 @@
 from tqdm import tqdm
 
+print("Importing modules...")
 from src.DataAnalysis.DatasetAnalysis import DatasetAnalyzer
 from src.DataPreprocessing.ChangeDetector import ChangeDetector
 from src.InteractiveExample.AgentHistory.AgentHistoryController import AgentHistoryController
