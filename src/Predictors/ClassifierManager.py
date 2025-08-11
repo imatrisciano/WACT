@@ -94,7 +94,7 @@ class ClassifierManager:
             #print(f"  Validation Object Loss: {val_object_loss:.4f}, Accuracy: {val_object_accuracy:.3f}%\n")
 
             if print_epoch_progress:
-                print(f"[EPOCH]: {epoch + 1}/{self.NUM_EPOCHS} "
+                print(f"[EPOCH]: {str(epoch + 1):>{len(str(self.NUM_EPOCHS))}}/{self.NUM_EPOCHS} "
                       f"\t[Action TRAIN ACC]: {train_action_accuracy:.4f}%"
                       f"\t[Action VAL ACC]: {val_action_accuracy:.4f}%"
                       f"\t[Object TRAIN ACC]: {train_object_accuracy:.4f}%"
@@ -353,10 +353,9 @@ class ClassifierManager:
                                                   self.NUM_ENCODER_LAYERS, self.NHEAD,
                                                   self.DIM_FEEDFORWARD, is_grid_search=False))
 
-            print(f"\nTest action accuracy: {test_action_accuracy}"
-                  f"\nTest object accuracy: {test_object_accuracy}")
-
+            print("MODEL SUMMARY".center(90, '='))
             summary(self.model)
+            print()
             self.plot_training_graphs()
 
             print("Saving model...")
