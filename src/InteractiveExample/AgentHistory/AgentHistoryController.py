@@ -60,6 +60,11 @@ class AgentHistoryController:
             if event.is_phantom():
                 self.figure_out_phantom_action(index)
 
+    def analyze_all_actions_success(self):
+        for index, event in enumerate(self.agent_action_history):
+            if not event.is_phantom():
+                self.figure_out_action_success(index)
+
     def update_current_world_status(self, current_world_status):
         if len(self.agent_action_history) == 0:
             self.initial_world_status = current_world_status
@@ -89,7 +94,6 @@ class AgentHistoryController:
         else:
             before_event_world_status = self.agent_action_history[event_index-1].after_event_world_status['objects']
 
-
         # Run inference
         detected_action_name, detected_object_id, predicted_action_confidence, predicted_object_confidence =\
             self.predictor_pipeline.predict_from_before_and_after_object_lists(before_event_world_status, after_event_world_status)
@@ -104,4 +108,38 @@ class AgentHistoryController:
         # Also return the prediction result
         return detected_action_name, detected_object_id
 
+    def figure_out_action_success(self, event_index: int):
+        """
+        Runs the prediction engine on a given non-phantom action to figure out whether it was successful or not by
+        checking if the performed action is the same one guessed by the engine,
+        then updates the action info with the new data
+        :param event_index: Index in the event history corresponding to the phantom action
+        """
 
+        # Boundary checks
+        if event_index < 0 or event_index >= len(self.agent_action_history):
+            raise IndexError("Event index out of range")
+
+        target_action = self.agent_action_history[event_index]
+        if target_action.is_phantom():
+            print("Target event is a phantom action, success prediction skipped", file=stderr)
+            return
+
+        # Figure out before and after event world statuses:
+        after_event_world_status = target_action.after_event_world_status['objects']
+        if event_index == 0:
+            before_event_world_status = self.initial_world_status['objects']
+        else:
+            before_event_world_status = self.agent_action_history[event_index - 1].after_event_world_status['objects']
+
+        # Run inference
+        detected_action_name, detected_object_id, predicted_action_confidence, predicted_object_confidence = \
+            self.predictor_pipeline.predict_from_before_and_after_object_lists(before_event_world_status, after_event_world_status)
+
+        # If the predicted action is the same as the theoretical action, the action was successful
+        if target_action.action == detected_action_name.replace(" ", ""):
+            target_action.success_status_reason = f"Confidence is {(predicted_action_confidence * 100.0):.2f}%"
+            target_action.success_status = "successful"
+        else:
+            target_action.success_status_reason = f"Detected action was '{detected_action_name}' with a confidence of {(predicted_action_confidence * 100.0):.2f}%"
+            target_action.success_status = "unsuccessful"

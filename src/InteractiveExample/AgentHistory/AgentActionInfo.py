@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 
 class AgentActionInfo:
@@ -13,6 +13,9 @@ class AgentActionInfo:
 
         # If the action info was phantom on creation
         self.was_phantom_action = self.is_phantom()
+
+        self.success_status: Literal["unanalyzed", "successful", "unsuccessful"] = "unanalyzed"
+        self.success_status_reason : Optional[str] = None
 
     def is_phantom(self):
         """
@@ -51,4 +54,20 @@ class AgentActionInfo:
         if self.was_phantom():
             action_description = f"[PHANTOM] {action_description}"
 
+        action_description += f". Success status is: {self.get_success_status_description()}"
         return action_description
+
+    def get_success_status_description(self) -> str:
+        """
+        Gets a short string describing if this action was successful
+        :return: A short action success description
+        """
+
+        if self.success_status == "unanalyzed":
+            return "Unanalyzed"
+        elif self.success_status == "successful":
+            return f"Successful ({self.success_status_reason})"
+        elif self.success_status == "unsuccessful":
+            return f"Unsuccessful ({self.success_status_reason})"
+
+        raise NotImplementedError(f"Success status '{self.success_status}' is not supported")

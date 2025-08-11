@@ -21,7 +21,8 @@ class WACTChatBot:
                             "You may call tools to help with the request, but you are allowed to answer normally if no tool is available for the job.\n"
                             "Be concise with your answers, summarize if necessary.\n"
                             "The tools you have access to let you know the execution history of the agent. The execution history is a sequence of events. Each event has an action and, optionally an action target. Both the action and the action target have a confidence score.\n"
-                            "Some actions are not recognized by the agent, those are known as 'phantom actions'. Phantom actions need to be analyzed using the tool in order to explain them."),
+                            "Some actions are not recognized by the agent, those are known as 'phantom actions'. Phantom actions need to be analyzed using the tool in order to explain them.\n"
+                            "You have the ability to analyze executed non-phantom actions to check if they were successful or not."),
                 ("placeholder", "{chat_history}"),
                 ("human", "{input}"),
                 ("placeholder", "{agent_scratchpad}"),
@@ -30,7 +31,13 @@ class WACTChatBot:
 
         model = ChatOllama(model=model_name, extract_reasoning=extract_reasoning)
 
-        tools = [self.get_execution_history, self.figure_out_all_phantom_actions, self.figure_a_specific_phantom_actions]
+        tools = [
+            self.get_execution_history,
+            self.figure_out_all_phantom_actions,
+            self.figure_a_specific_phantom_actions,
+            self.figure_out_the_success_likelihood_of_any_non_phantom_actions,
+            self.figure_a_specific_action_success
+        ]
         self.chat_history = []
 
         agent = create_tool_calling_agent(model, tools, prompt)
@@ -57,9 +64,29 @@ class WACTChatBot:
 
     @staticmethod
     @tool
+    def figure_out_the_success_likelihood_of_any_non_phantom_actions(action_index: int) -> str:
+        """Uses the prediction engine to figure out whether any non-phantom action was a successful action or not, then returns the updated execution history."""
+        WACTChatBot.singleton.agent_history_controller.analyze_all_actions_success()
+
+        message = "Every non phantom action was analyzed. "
+        message += WACTChatBot.singleton.agent_history_controller.get_history()
+        return message
+
+    @staticmethod
+    @tool
     def figure_a_specific_phantom_actions(action_index: int) -> str:
         """Updates the execution history of the agent in such a way to figure out the specified Unknown phantom actions, then returns the updated action event"""
         WACTChatBot.singleton.agent_history_controller.figure_out_phantom_action(action_index)
+
+        message = "The prediction model was executed on the given action. Here is the resulting prediction on said action:\n"
+        message += WACTChatBot.singleton.agent_history_controller.agent_action_history[action_index].get_short_description()
+        return message
+
+    @staticmethod
+    @tool
+    def figure_a_specific_action_success(action_index: int) -> str:
+        """Tries to infer whether a specific non-phantom action was successful or not. Then updates the execution history of the agent and returns the updated action event"""
+        WACTChatBot.singleton.agent_history_controller.figure_out_action_success(action_index)
 
         message = "The prediction model was executed on the given action. Here is the resulting prediction on said action:\n"
         message += WACTChatBot.singleton.agent_history_controller.agent_action_history[action_index].get_short_description()
