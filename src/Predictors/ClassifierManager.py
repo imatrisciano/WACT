@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 import seaborn as sns
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, f1_score
 from torch import nn, optim
 from torchinfo import summary
 from torch.utils.data import DataLoader
@@ -218,7 +218,7 @@ class ClassifierManager:
 
         return avg_action_loss, action_accuracy, avg_object_loss, object_accuracy
 
-    def _validate_model(self, data_loader, task: Literal["action", "object"], plot_confusion_matrix:bool = True) -> (float, float):
+    def _validate_model(self, data_loader, task: Literal["action", "object"], plot_confusion_matrix:bool = True) -> (float, float, float, float, float):
         """
         Computes the model's loss and accuracy on the given data_loader and builds and shows the confusion matrix
         :param data_loader: Provider of the validation data
@@ -264,6 +264,9 @@ class ClassifierManager:
 
         # Build and plot confusion matrix
         cm = confusion_matrix(all_labels, all_predictions)
+        f1_macro_average = f1_score(all_labels, all_predictions, average='macro', labels=labels.cpu().numpy())
+        f1_micro_average = f1_score(all_labels, all_predictions, average='micro', labels=labels.cpu().numpy())
+        f1_weighted_average = f1_score(all_labels, all_predictions, average='weighted', labels=labels.cpu().numpy())
 
         if task == "action":
             class_names = self.whole_dataset.get_labels()
@@ -285,7 +288,7 @@ class ClassifierManager:
         avg_loss = val_total_loss / len(data_loader)
         accuracy = 100 * val_correct_predictions / val_total_samples
 
-        return avg_loss, accuracy
+        return avg_loss, accuracy, f1_macro_average, f1_micro_average, f1_weighted_average
 
     def plot_training_graphs(self):
         font_size = 12
@@ -348,10 +351,9 @@ class ClassifierManager:
         if perform_grid_search:
             self._perform_grid_search(test_loader, train_loader, validation_loader)
         else:
-            test_action_accuracy, test_object_accuracy = (
-                self._define_and_train_classifier(test_loader, train_loader, validation_loader, self.D_MODEL,
-                                                  self.NUM_ENCODER_LAYERS, self.NHEAD,
-                                                  self.DIM_FEEDFORWARD, is_grid_search=False))
+            self._define_and_train_classifier(test_loader, train_loader, validation_loader, self.D_MODEL,
+                                              self.NUM_ENCODER_LAYERS, self.NHEAD,
+                                              self.DIM_FEEDFORWARD, is_grid_search=False)
 
             print("MODEL SUMMARY".center(90, '='))
             summary(self.model)
@@ -418,11 +420,28 @@ class ClassifierManager:
         print("Starting training process...")
         self._train_classifier(train_loader, validation_loader, print_epoch_progress=not is_grid_search)
         #print("Evaluating test accuracy for Action prediction...")
-        test_action_loss, test_action_accuracy = self._validate_model(test_loader, task="action", plot_confusion_matrix=not is_grid_search)
-        print(f"Test Loss for Action Prediction: {test_action_loss:.4f}, Test Accuracy for Action Prediction: {test_action_accuracy:.3f}%\n")
+        test_action_loss, test_action_accuracy, f1_macro, f1_micro, f1_weighted = self._validate_model(test_loader, task="action", plot_confusion_matrix=not is_grid_search)
+        if is_grid_search:
+            print(f"Test Loss for Action Prediction: {test_action_loss:.4f}, Test Accuracy for Action Prediction: {test_action_accuracy:.3f}%\n")
+        else:
+            print(" [ ACTION PREDICTION RESULTS ]\n"
+                  f"\t - Test Loss: {test_action_loss:.4f}\n"
+                  f"\t - Test Accuracy: {test_action_accuracy:.3f}%\n"
+                  f"\t - F1 Macro Average: {f1_macro:.3f}\n"
+                  f"\t - F1 Micro Average: {f1_micro:.3f}\n"
+                  f"\t - F1 Weighted Average: {f1_weighted:.3f}\n")
+
         #print("Evaluating test accuracy for Object prediction...")
-        test_object_loss, test_object_accuracy = self._validate_model(test_loader, task="object", plot_confusion_matrix=not is_grid_search)
-        print(f"Test Loss for Object Prediction: {test_object_loss:.4f}, Test Accuracy for Object Prediction: {test_object_accuracy:.3f}%\n")
+        test_object_loss, test_object_accuracy, f1_macro, f1_micro, f1_weighted  = self._validate_model(test_loader, task="object", plot_confusion_matrix=not is_grid_search)
+        if is_grid_search:
+            print(f"Test Loss for Object Prediction: {test_object_loss:.4f}, Test Accuracy for Object Prediction: {test_object_accuracy:.3f}%\n")
+        else:
+            print(" [ OBJECT PREDICTION RESULTS ]\n"
+                  f"\t - Test Loss: {test_object_loss:.4f}\n"
+                  f"\t - Test Accuracy: {test_object_accuracy:.3f}%\n"
+                  f"\t - F1 Macro Average: {f1_macro:.3f}\n"
+                  f"\t - F1 Micro Average: {f1_micro:.3f}\n"
+                  f"\t - F1 Weighted Average: {f1_weighted:.3f}\n")
 
         return test_action_accuracy, test_object_accuracy
 
