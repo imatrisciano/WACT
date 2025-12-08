@@ -14,6 +14,8 @@ class DatasetAnalyzer:
         self.object_store = object_store
         self.change_detector = change_detector
         self._dataset_analyzed: bool = False
+        self.font_size = 14
+        self.title_font_size = 16
 
         self.action_counts = defaultdict(int)
         self.changed_property_count = defaultdict(int)
@@ -93,10 +95,10 @@ class DatasetAnalyzer:
         # Create the action counts bar graph
         plt.figure(figsize=(12, 6))
         plt.bar(action_names, action_counts, color='skyblue', edgecolor='#333')
-        plt.xlabel('Action Name')
-        plt.ylabel('Number of Instances')
-        plt.title('Distribution of Actions')
-        plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
+        plt.xlabel('Action Name', fontsize=self.font_size)
+        plt.ylabel('Number of Instances', fontsize=self.font_size)
+        plt.title('Distribution of Actions', fontsize=self.title_font_size)
+        plt.xticks(rotation=45, ha='right', fontsize=self.font_size)  # Rotate x-axis labels for better readability
         plt.tight_layout()  # Adjust layout to prevent labels from overlapping
         plt.show()
 
@@ -110,10 +112,10 @@ class DatasetAnalyzer:
 
         n, bins, patches = plt.hist(self.action_property_changes, bins=40, color='skyblue', edgecolor='#333')
 
-        plt.xlabel('Action property changes')
-        plt.ylabel('Frequency')
-        plt.title(f'Frequency Distribution of Action changes')
-        plt.xticks(bins, rotation=90, ha='right')
+        plt.xlabel('Action property changes', fontsize=self.font_size)
+        plt.ylabel('Frequency', fontsize=self.font_size)
+        plt.title(f'Frequency Distribution of Action changes', fontsize=self.title_font_size)
+        plt.xticks(bins, rotation=90, ha='right', fontsize=self.font_size)
         plt.grid(axis='y', alpha=0.75)
         plt.tight_layout()
         plt.show()
@@ -137,10 +139,10 @@ class DatasetAnalyzer:
 
         n, bins, patches = plt.hist(normalized_property_changes, bins=40, color='skyblue', edgecolor='#333')
 
-        plt.xlabel('Action property changes, normalized per number of changed objects')
-        plt.ylabel('Frequency')
-        plt.title(f'Frequency Distribution of Action changes')
-        plt.xticks(bins, rotation=90, ha='right')
+        plt.xlabel('Action property changes, normalized per number of changed objects', fontsize=self.font_size)
+        plt.ylabel('Frequency', fontsize=self.font_size)
+        plt.title(f'Frequency Distribution of Action changes', fontsize=self.title_font_size)
+        plt.xticks(bins, rotation=90, ha='right', fontsize=self.font_size)
         plt.grid(axis='y', alpha=0.75)
         plt.tight_layout()
         plt.show()
@@ -151,6 +153,10 @@ class DatasetAnalyzer:
 
         plt.figure(figsize=(12, 6))
         plt.bar(property_names, property_counts, color='skyblue', edgecolor='#333')
+        plt.xlabel('Property Path', fontsize=self.font_size)
+        plt.ylabel('Number of Instances', fontsize=self.font_size)
+        plt.title('Distribution of Property Changes', fontsize=self.title_font_size)
+        plt.xticks(rotation=90, ha='right', fontsize=self.font_size)  # Rotate x-axis labels for better readability
         plt.xlabel('Property Path')
         plt.ylabel('Number of Instances')
         plt.title('Distribution of Property Changes')
