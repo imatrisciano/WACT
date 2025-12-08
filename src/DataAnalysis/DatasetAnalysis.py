@@ -156,6 +156,7 @@ class DatasetAnalyzer:
         plt.xlabel('Property Path', fontsize=self.font_size)
         plt.ylabel('Number of Instances', fontsize=self.font_size)
         plt.title('Distribution of Property Changes', fontsize=self.title_font_size)
+        plt.yscale('log') # Set y-axis to logarithmic scale
         plt.xticks(rotation=90, ha='right', fontsize=self.font_size)  # Rotate x-axis labels for better readability
         plt.xlabel('Property Path')
         plt.ylabel('Number of Instances')
