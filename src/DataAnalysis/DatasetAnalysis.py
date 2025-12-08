@@ -1,4 +1,4 @@
-from statistics import median, mean
+from statistics import median, mean, stdev
 
 import matplotlib.pyplot as plt
 from collections import defaultdict
@@ -107,6 +107,7 @@ class DatasetAnalyzer:
         print(f" - min: {min(self.action_property_changes)}")
         print(f" - max: {max(self.action_property_changes)}")
         print(f" - avg: {mean(self.action_property_changes)}")
+        print(f" - std: {stdev(self.action_property_changes)}")
         print(f" - median: {median(self.action_property_changes)}")
         print("\n\n")
 
@@ -125,6 +126,7 @@ class DatasetAnalyzer:
         print(f" - min: {min(self.action_object_changes)}")
         print(f" - max: {max(self.action_object_changes)}")
         print(f" - avg: {mean(self.action_object_changes)}")
+        print(f" - std: {stdev(self.action_object_changes)}")
         print(f" - median: {median(self.action_object_changes)}")
         print("\n\n")
 
@@ -137,6 +139,7 @@ class DatasetAnalyzer:
         print(f" - min: {min(normalized_property_changes)}")
         print(f" - max: {max(normalized_property_changes)}")
         print(f" - avg: {mean(normalized_property_changes)}")
+        print(f" - std: {stdev(normalized_property_changes)}")
         print(f" - median: {median(normalized_property_changes)}")
         print("\n\n")
 
@@ -200,7 +203,3 @@ class DatasetAnalyzer:
         self._plot_number_of_changes_statistics()
 
         self._plot_changed_property_count()
-
-
-
-
