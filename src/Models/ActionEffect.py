@@ -33,4 +33,4 @@ class ActionEffect:
         return sum([x.get_change_score() for x in self.object_changes])
 
     def number_of_changed_objects(self) -> int:
-        return len(self.object_changes)
+        return sum(1 for x in self.object_changes if x.has_changes())
