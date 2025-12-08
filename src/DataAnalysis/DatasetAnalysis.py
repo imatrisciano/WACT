@@ -129,7 +129,10 @@ class DatasetAnalyzer:
         print("\n\n")
 
         print("Number of changed properties per each action, normalized per number of changed objects:")
-        normalized_property_changes = [self.action_property_changes[i] / self.action_object_changes[i] for i in range(0, len(self.action_property_changes))]
+        normalized_property_changes = [
+            self.action_property_changes[i] / self.action_object_changes[i]
+            if self.action_object_changes[i] != 0 else 0
+            for i in range(0, len(self.action_property_changes))]
 
         print(f" - min: {min(normalized_property_changes)}")
         print(f" - max: {max(normalized_property_changes)}")
